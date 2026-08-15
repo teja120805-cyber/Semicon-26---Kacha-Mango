@@ -1,0 +1,21 @@
+numpy>=2.0
+# Pinned exactly (2026-08-15): a cross-machine benchmark comparison found
+# opencv 4.13.0 vs 5.0.0 (a major-version jump) produces materially
+# different pixel output from the identical seed - up to 115/255 gray-level
+# differences across 98% of pixels in generator/degradation_models.py's
+# warpAffine/remap/GaussianBlur calls, enough to shift pooled accuracy@5px
+# by several percentage points. numpy's Generator API held up fine across
+# the 2.4.4 vs 2.5.1 version difference tested alongside this (near-zero
+# residual once opencv was matched) - this pin is specifically to close the
+# opencv gap. See reports/GATE_EXCEPTIONS.md and README.md section 8.
+opencv-python-headless==5.0.0.93
+scipy>=1.13
+pandas>=2.2
+matplotlib>=3.9
+pillow>=10.3
+streamlit>=1.38
+plotly>=5.20  # Executive Summary's live accuracy-curve/family-bar charts (app/app.py); ships its own
+              # bundled JS via Streamlit's frontend, no internet access needed at runtime
+torch>=2.4
+torchvision>=0.19
+pytest>=8.0

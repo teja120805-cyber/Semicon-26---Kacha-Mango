@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Generated datasets (reproducible from seed via generator/dataset_generator.py -
+# see README "Reproducibility" section - never commit generated PNGs/manifests blindly)
+data/development/*
+data/validation/*
+data/held_out/*
+data/challenge/*
+data/cross_generator/*
+!data/*/.gitkeep
+
+# Trained model checkpoints (reproducible via model/train.py + TRAINING_PROTOCOL.md)
+model/checkpoints/*
+!model/checkpoints/.gitkeep
+
+# Generated benchmark artifacts (reproducible via evaluation/*.py)
+outputs/plots/*
+outputs/reports/*
+outputs/visualizations/*
+!outputs/plots/.gitkeep
+!outputs/reports/.gitkeep
+!outputs/visualizations/.gitkeep
+
+# Experiment outputs (each experiment's own generated artifacts)
+experiments/*/outputs/
+experiments/*/checkpoints/
+experiments/*/data/
+experiments/*/data_b/
+experiments/*/*_data/
+
+# Local backup from a dataset-regeneration verification pass - not source,
+# not meant to be pushed (external/ IS tracked - it's the real cross-generator
+# eval-surface source, kept intentionally).
+data_backup_pre_integration/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+.claude/

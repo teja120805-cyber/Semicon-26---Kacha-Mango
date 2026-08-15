@@ -1,0 +1,159 @@
+{
+  "passed": false,
+  "criteria": {
+    "1_improves_validation": false,
+    "2_improves_held_out": false,
+    "3_improves_or_ties_cross_generator": false,
+    "4_no_catastrophic_increase": false,
+    "5_no_per_family_regression": false,
+    "6_acceptable_runtime": true,
+    "7_stable_across_seeds": false
+  },
+  "per_split": {
+    "validation": {
+      "split": "validation",
+      "n_baseline": 40,
+      "n_candidate": 40,
+      "baseline_accuracy_5px": 0.875,
+      "candidate_accuracy_5px": 0.6,
+      "improved": false,
+      "baseline_catastrophic_rate": 0.075,
+      "candidate_catastrophic_rate": 0.2,
+      "catastrophic_regression": true,
+      "baseline_mean_runtime_s": 0.6720352874894161,
+      "candidate_mean_runtime_s": 0.7033423975000233
+    },
+    "held_out": {
+      "split": "held_out",
+      "n_baseline": 40,
+      "n_candidate": 40,
+      "baseline_accuracy_5px": 0.625,
+      "candidate_accuracy_5px": 0.125,
+      "improved": false,
+      "baseline_catastrophic_rate": 0.25,
+      "candidate_catastrophic_rate": 0.65,
+      "catastrophic_regression": true,
+      "baseline_mean_runtime_s": 0.6651018600066891,
+      "candidate_mean_runtime_s": 0.7109754025000029
+    },
+    "challenge": {
+      "split": "challenge",
+      "n_baseline": 32,
+      "n_candidate": 32,
+      "baseline_accuracy_5px": 0.5625,
+      "candidate_accuracy_5px": 0.21875,
+      "improved": false,
+      "baseline_catastrophic_rate": 0.34375,
+      "candidate_catastrophic_rate": 0.59375,
+      "catastrophic_regression": true,
+      "baseline_mean_runtime_s": 0.6604703312368656,
+      "candidate_mean_runtime_s": 0.7103110718750045
+    },
+    "cross_generator": {
+      "split": "cross_generator",
+      "n_baseline": 20,
+      "n_candidate": 20,
+      "baseline_accuracy_5px": 0.65,
+      "candidate_accuracy_5px": 0.25,
+      "improved": false,
+      "baseline_catastrophic_rate": 0.25,
+      "candidate_catastrophic_rate": 0.6,
+      "catastrophic_regression": true,
+      "baseline_mean_runtime_s": 0.6839337850105949,
+      "candidate_mean_runtime_s": 0.7052193299999658
+    }
+  },
+  "per_family": [
+    {
+      "structural_family": "ch_barrel_charging",
+      "n": 8,
+      "baseline_accuracy_5px": 0.625,
+      "candidate_accuracy_5px": 0.375,
+      "regressed": true
+    },
+    {
+      "structural_family": "ch_combined_acquisition",
+      "n": 8,
+      "baseline_accuracy_5px": 0.375,
+      "candidate_accuracy_5px": 0.125,
+      "regressed": true
+    },
+    {
+      "structural_family": "ch_speckle_saltpepper",
+      "n": 8,
+      "baseline_accuracy_5px": 0.875,
+      "candidate_accuracy_5px": 0.25,
+      "regressed": true
+    },
+    {
+      "structural_family": "ch_worst_case",
+      "n": 8,
+      "baseline_accuracy_5px": 0.375,
+      "candidate_accuracy_5px": 0.125,
+      "regressed": true
+    },
+    {
+      "structural_family": "cross_generator_external",
+      "n": 20,
+      "baseline_accuracy_5px": 0.65,
+      "candidate_accuracy_5px": 0.25,
+      "regressed": true
+    },
+    {
+      "structural_family": "ho_heavy_noise",
+      "n": 10,
+      "baseline_accuracy_5px": 0.8,
+      "candidate_accuracy_5px": 0.1,
+      "regressed": true
+    },
+    {
+      "structural_family": "ho_rotation_drift",
+      "n": 10,
+      "baseline_accuracy_5px": 0.4,
+      "candidate_accuracy_5px": 0.1,
+      "regressed": true
+    },
+    {
+      "structural_family": "ho_scale_drift",
+      "n": 10,
+      "baseline_accuracy_5px": 0.5,
+      "candidate_accuracy_5px": 0.0,
+      "regressed": true
+    },
+    {
+      "structural_family": "ho_vignette_gamma",
+      "n": 10,
+      "baseline_accuracy_5px": 0.8,
+      "candidate_accuracy_5px": 0.3,
+      "regressed": true
+    },
+    {
+      "structural_family": "val_linewidth_bias",
+      "n": 10,
+      "baseline_accuracy_5px": 0.8,
+      "candidate_accuracy_5px": 0.4,
+      "regressed": true
+    },
+    {
+      "structural_family": "val_mat_boundary",
+      "n": 10,
+      "baseline_accuracy_5px": 0.8,
+      "candidate_accuracy_5px": 0.6,
+      "regressed": true
+    },
+    {
+      "structural_family": "val_multi_mat",
+      "n": 10,
+      "baseline_accuracy_5px": 1.0,
+      "candidate_accuracy_5px": 0.9,
+      "regressed": true
+    },
+    {
+      "structural_family": "val_same_preset_boundary",
+      "n": 10,
+      "baseline_accuracy_5px": 0.9,
+      "candidate_accuracy_5px": 0.5,
+      "regressed": true
+    }
+  ]
+}

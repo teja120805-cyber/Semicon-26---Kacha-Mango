@@ -1,0 +1,93 @@
+{
+  "seed": 20260103,
+  "checkpoint_path": "model/checkpoints\\embedding_net_seed20260103.pt",
+  "best_epoch": 7,
+  "best_dev_early_stop_loss": 0.16494039197762808,
+  "n_train_triplets": 48,
+  "n_early_stop_triplets": 24,
+  "epochs_run": 15,
+  "hyperparameters": {
+    "epochs": 40,
+    "batch_size": 8,
+    "lr": 0.001,
+    "margin": 0.3,
+    "patience": 8
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.1947264845172564,
+      "dev_early_stop_loss": 0.24799788991610208
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.020648824671904247,
+      "dev_early_stop_loss": 0.20547087987263998
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.003967794279257457,
+      "dev_early_stop_loss": 0.20769375562667847
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.0025681406259536743,
+      "dev_early_stop_loss": 0.21439725160598755
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.0,
+      "dev_early_stop_loss": 0.20133866866429648
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.0031977718075116477,
+      "dev_early_stop_loss": 0.1713567997018496
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.0004120158652464549,
+      "dev_early_stop_loss": 0.16494039197762808
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.0,
+      "dev_early_stop_loss": 0.1669851541519165
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.0,
+      "dev_early_stop_loss": 0.17808585365613303
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.0054601530234018964,
+      "dev_early_stop_loss": 0.19172907372315726
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.00030031055212020874,
+      "dev_early_stop_loss": 0.20677298804124197
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.0016461027165253956,
+      "dev_early_stop_loss": 0.20623387396335602
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.0005399174988269806,
+      "dev_early_stop_loss": 0.21016553541024527
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.0,
+      "dev_early_stop_loss": 0.21576563517252603
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.0016311357418696086,
+      "dev_early_stop_loss": 0.22256597876548767
+    }
+  ]
+}
