@@ -43,6 +43,9 @@ experiments/*/*_data/
 # eval-surface source, kept intentionally).
 data_backup_pre_integration/
 
+# Office lock/temp files (created while a .docx/.xlsx/.pptx is open; never real content)
+~$*
+
 # OS
 .DS_Store
 Thumbs.db
