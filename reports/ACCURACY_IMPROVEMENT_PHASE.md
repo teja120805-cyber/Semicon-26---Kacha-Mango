@@ -1,5 +1,16 @@
 # Accuracy Improvement Phase
 
+> **Current production accuracy: 77.6%@5px pooled (n=156), as of 2026-08-16.** Reached via
+> PSF-matched dual-arm candidate generation (`reports/GATE_EXCEPTIONS.md` exception 3,
+> `experiments/psf_gated_selection/REPORT.md`), which corrected a ~16x sharpness mismatch between
+> the correlation template and the Search image. Any pooled-accuracy figure below that predates
+> that change is historical.
+> 
+> A second, larger campaign followed this one and is summarised in
+> `experiments/ACCURACY_90_CAMPAIGN.md` (nine further ideas, all rejected) plus the
+> diagnostic chain that eventually succeeded: `experiments/oracle_ceiling_diagnostic/`,
+> `experiments/crop_uniqueness_ceiling/`, `experiments/psf_gated_selection/`.
+
 Consolidated findings from the candidate-generation-focused research campaign (Experiments A-D).
 Detail lives in each `experiments/<name>/REPORT.md`; this ties them together. Supersedes nothing —
 `reports/ACCURACY_FORENSICS.md` remains the authoritative forensics document; this report is about

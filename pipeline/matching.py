@@ -13,11 +13,29 @@ import cv2
 import numpy as np
 
 
-def build_template(reference: np.ndarray, scale_factor: float, rotation_deg: float) -> np.ndarray:
+def build_template(reference: np.ndarray, scale_factor: float, rotation_deg: float,
+                   psf_sigma: float = 0.0) -> np.ndarray:
     """Resize the Reference down by `scale_factor` (a hypothesis for the
     true Reference:Search pixel-size ratio, nominally 10) then rotate by
     `rotation_deg`, producing one candidate template to correlate against
-    the Search image."""
+    the Search image.
+
+    `psf_sigma` optionally convolves the finished template with a Gaussian
+    to bring it into the Search image's passband. The two images travel
+    different optical/resampling paths: the Reference is blurred at
+    Reference resolution and then shrunk 10x, so the template carries only
+    ~0.06 Search-pixels of blur, while the Search is blurred at fine-canvas
+    resolution and then area-averaged, carrying ~1.0. Correlating a template
+    ~16x sharper than the image it is matched against costs fidelity
+    everywhere - measured at only ~0.85 ZNCC even at the TRUE location,
+    which leaves no separation from periodic decoys sitting at the same
+    level, even though the underlying Search content at those two places
+    differs at ZNCC 0.73 (experiments/crop_uniqueness_ceiling/REPORT.md
+    section 3).
+
+    Default 0.0 reproduces the pre-2026-08-16 template exactly, so every
+    caller that does not opt in is bit-identical to before.
+    """
     h, w = reference.shape
     size = max(8, int(round(w / scale_factor)))
     template = cv2.resize(reference.astype(np.float32), (size, size), interpolation=cv2.INTER_AREA)
@@ -25,6 +43,8 @@ def build_template(reference: np.ndarray, scale_factor: float, rotation_deg: flo
         matrix = cv2.getRotationMatrix2D((size / 2.0, size / 2.0), rotation_deg, 1.0)
         template = cv2.warpAffine(template, matrix, (size, size), flags=cv2.INTER_LINEAR,
                                    borderMode=cv2.BORDER_REPLICATE)
+    if psf_sigma > 0.0:
+        template = cv2.GaussianBlur(template, (0, 0), psf_sigma, borderType=cv2.BORDER_REPLICATE)
     return template.astype(np.float32)
 
 

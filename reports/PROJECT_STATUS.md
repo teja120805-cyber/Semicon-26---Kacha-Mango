@@ -226,12 +226,58 @@ were widened from 5x5 (25 combinations) to 9x9 (81 combinations), same span — 
 change. Fresh authoritative benchmark: **71.2%@5px pooled** (was 68.6%), mean error 53.6px (was
 65.3px), runtime ~3.1x. Full evidence and exact diff: `reports/ACCURACY_IMPROVEMENT_PHASE.md`.
 
+## Phase — template-fidelity campaign (2026-08-16)
+
+**Production is at 77.6%@5px pooled (n=156), up from 74.4%.** Two rounds of work:
+
+1. **A 90%-target campaign of nine independent ideas — all nine rejected.** Consolidated in
+   `experiments/ACCURACY_90_CAMPAIGN.md`. Their shared failure mode is now understood: all nine
+   operated *downstream* of template construction, re-ranking or re-scoring an existing pool.
+2. **A diagnostic chain that found the actual bottleneck**, then a change that fixed part of it:
+   - `experiments/oracle_ceiling_diagnostic/` — **falsified the campaign's headline finding.** The
+     claimed "4x score gap" between the true location and the decoy does not exist anywhere; the
+     largest is 1.048x. Every failure is a near-tie. Also decomposed the 40 failures into 45%
+     candidate-generation, 22.5% tie-break, 32.5% scoring.
+   - `experiments/crop_uniqueness_ceiling/` — **periodicity is a confound, not a cause** (0.4pp
+     once crop uniqueness is held fixed; see the revision banner on
+     `reports/ACCURACY_FORENSICS.md`). Refuted the ill-posedness hypothesis: 154/156 crops have a
+     unique origin. Located the real bottleneck as **template fidelity** — the two Search
+     locations differ at ZNCC 0.732 while the template separates them by 0.0098.
+   - `experiments/psf_matched_template/`, `psf_matched_adaptive/`, `psf_second_seed/` — the
+     mechanism (a ~16x template/Search sharpness mismatch), an adaptive variant that failed, and
+     independent second-seed validation.
+   - `experiments/psf_gated_selection/` — **integrated.** Builds the pool both with and without a
+     passband-matching blur, keeps the more decisive arm. 0.7436 -> 0.7756 frozen, 0.6618 -> 0.6985
+     on seed 618234; 14 rescued / 4 broken across both, sign test p = 0.031 — the first
+     statistically significant result in the project, and the first to pass gate criteria 1, 2 and
+     3 together. Documented as gate exception 3 (`reports/GATE_EXCEPTIONS.md`).
+
+Also produced but **not** integrated: a confidence-gating result showing the pipeline can answer
+51% of pairs at 97.5% accuracy, or 69% at 92.5% (`experiments/crop_uniqueness_ceiling/` §4). That
+is a calibration change rather than an accuracy one and was left as a candidate.
+
 ## Not yet started / possible future work
 
-Nothing blocking. Ten experiments tested total across all three rounds; one (`finer_hypothesis_grid`)
-passed its validation campaign and is now integrated into production — see above. `refinement.py`
-and `feature_extraction.py` remain completely unmodified. Two possible next steps, neither required:
-(1) a properly-scoped periodicity re-ranking experiment — informed by this round's evidence that
-classical scoring
-alternatives and a modestly-trained learned proposer both fell short, so any future attempt should
-either scale training data further or target a different mechanism.
+**Known-good next steps, in priority order:**
+
+1. **Template fidelity is only partly closed.** The passband fix lifts fidelity at the true
+   location from ~0.78 toward ~0.85; the Search content itself supports ~0.95. Remaining sources
+   of the gap are dose/noise mismatch and the raster shear/jitter the template never models.
+2. **`ch_worst_case` is the one family the integrated change makes slightly worse** (net -1 across
+   both seeds, n=16 total). A guard keyed on impulse-noise or geometric-distortion signatures
+   would target it — but note its baseline accuracy swings 0.750 -> 0.125 between seeds, so this
+   may be chasing noise.
+3. **The `development` split contains no degraded-acquisition family**, so every dev-only
+   hyperparameter sweep in this project is structurally blind to over-blur/over-smoothing damage.
+   This affects prior conclusions, not just future ones — see
+   `experiments/psf_matched_template/REPORT.md` §3.
+4. **`validation` has only 40 pairs at 0.900-0.925**, a ceiling that blocked two separate
+   near-miss results from passing the gate. Expanding it would restore the benchmark's ability to
+   resolve improvements on that split.
+5. **`AMBIGUITY_THRESHOLD = 0.92` is miscalibrated** — it fires on 128/156 pairs at 31% precision,
+   while the pool-internal gap statistic reaches 95% failure recall at 49% coverage.
+
+**Closed by evidence, do not retry as-is:** periodicity-targeted re-ranking (nine rejections);
+learned re-rankers trained from scratch on this dataset (three rejections, including at 7.5x data
+— `reports/DATASET_AUDIT.md`'s "more data" hypothesis is falsified); blur estimation from image
+spectra as a family discriminator (`experiments/psf_matched_adaptive/`).

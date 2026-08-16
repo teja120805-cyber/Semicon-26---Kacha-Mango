@@ -1,5 +1,24 @@
 # Accuracy Forensics (Phase 3)
 
+> **Revised 2026-08-16 — periodicity is a confound, not the primary cause.** This report's
+> Finding 1 names periodicity the strongest single factor. That conclusion is correct *within this
+> report's controlled sweep* (which holds boundary absent and varies pitch), but it is not what
+> dominates on the real benchmark. Measured across all 156 pairs, accuracy is governed by whether
+> the Reference crop is **unique** at all: `uniqueness_score = 0` scores 43.8% (n=48) and
+> everything above 0 scores 88.0% (n=108). Holding uniqueness fixed, high vs. low periodicity moves
+> accuracy by **0.4pp** — nothing. Periodicity correlates with failure because non-unique crops
+> tend to be periodic, not because periodicity is the operative variable.
+>
+> This report's Finding 3 (boundary presence is strongly protective) is the same effect seen from
+> the other side, and it holds up: crops crossing a mat or strip boundary score 89.8% vs 54.4% for
+> those crossing neither. Read Finding 3 as the primary result and Finding 1 as a secondary effect
+> *within* the non-unique subgroup.
+>
+> The practical consequence: nine experiments in `experiments/ACCURACY_90_CAMPAIGN.md` targeted
+> periodicity directly and all nine were no-ops. The change that did work
+> (`experiments/psf_gated_selection/`) targeted template fidelity instead. Evidence:
+> `experiments/crop_uniqueness_ceiling/REPORT.md`.
+
 **Question this report answers**: *why* is the classical pipeline wrong when it's wrong — not just
 which structural family scores worst. `reports/V2_BASELINE_REPORT.md`'s family-level breakdown
 correlates several hard conditions (periodicity, rotation, scale, boundary) but confounds them,
@@ -35,6 +54,11 @@ candidate pool and classified:
 | `unexplained` | none of the above — flagged for manual review (none observed in this run) |
 
 ## Finding 1 — Periodicity is the strongest single factor tested, and it fails at candidate generation, not ranking
+
+> **See the revision note at the top of this report.** Within this controlled sweep the
+> effect below is real, but on the frozen benchmark periodicity contributes ~0.4pp once
+> crop uniqueness is held fixed. The operative variable is uniqueness (equivalently,
+> boundary presence — Finding 3), not pitch.
 
 | Preset (word pitch) | n | Acc@5px | P90 error | >10px failure | Dominant failure mode |
 |---|---:|---:|---:|---:|---|

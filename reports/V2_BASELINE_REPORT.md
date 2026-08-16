@@ -3,7 +3,9 @@
 > **Superseded 2026-08-15**: `pipeline/candidate_generation.py`'s default scale/rotation hypothesis
 > grid was integrated into production (5x5 -> 9x9, same span, half the step size) after
 > `reports/ACCURACY_IMPROVEMENT_PHASE.md`'s validation showed a robust, reproducible improvement.
-> **Current production pooled accuracy is 71.2%@5px (mean 53.6px, n=156)** — this report's numbers
+> **Current production pooled accuracy is 77.6%@5px (n=156), as of 2026-08-16** (71.2% when
+> this banner was first written; raised by the A2/A6 integrations and then by PSF-matched
+> dual-arm candidate generation — `reports/GATE_EXCEPTIONS.md`) — this report's numbers
 > below (68.6%@5px, the pre-integration 25-hypothesis classical baseline) are the historical analysis
 > that motivated the change, kept for reference, not the current configuration. See
 > `reports/ACCURACY_IMPROVEMENT_PHASE.md` for the integration evidence and current per-condition

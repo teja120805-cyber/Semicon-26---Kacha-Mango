@@ -35,28 +35,33 @@ coordinates — recovering the intended inspection site after stage drift, vibra
 
 ## Key Results
 
-**74.4% accuracy @5px, pooled across 156 evaluated pairs** — classical multi-scale, multi-rotation
-ZNCC matching, no deep learning required in production.
+**77.6% accuracy @5px, pooled across 156 evaluated pairs** — classical multi-scale, multi-rotation
+ZNCC matching, no deep learning in the production path.
 
 | Metric | Value |
-|---|---|
-| Accuracy @1px | 69.2% |
-| Accuracy @2px | 74.4% |
-| Accuracy @4px | 74.4% |
-| **Accuracy @5px (pooled)** | **74.4%** |
-| Median error | 0.33 px |
-| Mean error | 55.6 px |
-| Catastrophic (>50px) rate | 16.7% |
-| Mean runtime | 1.77 s/pair |
+|---|---:|
+| Accuracy @1px | 72.4% |
+| Accuracy @2px | 77.6% |
+| **Accuracy @5px (pooled)** | **77.6%** |
+| Median error | 0.32 px |
+| Mean error | 47.7 px |
+| P90 / P95 error | 69.8 px / 433.8 px |
+| Failure rate >10px | 21.2% |
+| Catastrophic (>50px) rate | 14.1% |
+| Mean runtime | 6.3 s/pair |
 | Pairs evaluated | 156, across 5 independent splits |
 
-| Split | Accuracy @5px |
-|---|---:|
-| `validation` | 90.0% |
-| `held_out` | 65.0% |
-| `challenge` | 75.0% |
-| `cross_generator` | 80.0% |
-| `development` | 58.3% |
+| Split | Pairs | Accuracy @5px |
+|---|---:|---:|
+| `validation` | 40 | 92.5% |
+| `cross_generator` | 20 | 80.0% |
+| `challenge` | 32 | 71.9% |
+| `development` | 24 | 70.8% |
+| `held_out` | 40 | 70.0% |
+
+Error is strongly bimodal: the median prediction lands within a third of a pixel, while the
+remaining failures are wrong-location misses rather than imprecise ones. Improving accuracy is
+therefore a question of candidate disambiguation, not subpixel precision.
 
 Full breakdown, all 8 required plots, and per-family/per-condition results: `outputs/reports/`,
 `outputs/plots/`, or the Streamlit app's Benchmark Dashboard. Numbers regenerate deterministically —
@@ -107,10 +112,25 @@ number and every interactive use:
 
 ```
 Reference -> preprocessing -> candidate_generation (multi-scale x multi-rotation ZNCC,
-             spatially deduplicated) -> ranking (classical by default; learned only if
-             explicitly requested) -> refinement (subpixel parabolic fit) -> final
+             spatially deduplicated, run under two template passbands) -> arm selection
+             (keep the more decisive pool) -> ranking (classical by default; learned only
+             if explicitly requested) -> refinement (subpixel parabolic fit) -> final
              coordinate -> confidence / ambiguity score
 ```
+
+**Template passband matching.** The Reference and Search images reach the matcher through different
+optical and resampling paths: the Reference is blurred at Reference resolution and then reduced 10x,
+while the Search image is blurred at fine-canvas resolution and area-averaged. A template built
+naively is therefore far sharper than the image it is correlated against, which costs correlation
+fidelity at the true location and leaves too little margin over self-similar decoys.
+
+The pipeline builds the candidate pool twice — once with the direct template, once with a template
+convolved into the Search image's passband — and keeps whichever pool yields a more decisive winner,
+measured as the score gap between the best candidate and the best candidate at a different location.
+No threshold or tuned constant is involved, and acquisitions that are degraded in ways the blur
+would compound simply select the direct template. `LocalizationResult.psf_sigma` reports which
+passband was used for each pair. Passing `psf_selection=False` to `localize()` disables the second
+arm.
 
 The pipeline never reads ground truth. Candidate learned improvements are developed in isolation
 under `experiments/<name>/` and only integrated into production if they clear a mandatory,
@@ -217,11 +237,14 @@ condition, periodicity, and uniqueness. `plots.py` generates the 8 required plot
 applies a mandatory 7-criterion integration gate comparing any candidate change against the frozen
 classical baseline before it can be merged into production.
 
-Two spec-required behaviors — the literal 9:1–11:1 scale range and the "closest to Search-image
-centre" tie-break rule — are integrated as **documented gate exceptions**: evidence-backed safe
-(zero regressions across two independent datasets each) but narrowly-scoped enough that the gate's
-blanket "must broadly improve pooled validation/held_out" bar doesn't fit their effect surface. Full
-rationale and evidence: `reports/GATE_EXCEPTIONS.md`.
+Three production behaviours are integrated as **documented gate exceptions** — changes shipped
+despite not clearing all seven criteria, each logged with the criteria it failed and the evidence
+that justified it: the literal 9:1–11:1 scale range, the "closest to Search-image centre" tie-break
+rule, and template passband matching. The first two are narrowly-scoped spec-compliance fixes whose
+effect surface is too small for the gate's blanket "must broadly improve pooled validation/held_out"
+bar; the third is a broad change validated across two independently-seeded datasets whose two
+failing criteria are single-pair margins. Full rationale and evidence: `reports/GATE_EXCEPTIONS.md`.
+"In production" does not by itself mean "passed all seven"; that file is the authoritative list.
 
 A candidate learned re-ranker (`experiments/embedding_reranker_v1/`) failed the integration gate on
 every criterion, across all 3 training seeds, and was not integrated — production ranking remains
@@ -248,10 +271,17 @@ classical. Full analysis: `reports/V2_MODEL_EVALUATION_REPORT.md`.
 
 ## Known Limitations
 
-- Rotation/scale drift and dense periodic structure are the classical pipeline's weakest points —
-  periodic-mat aliasing is a stronger *standalone* bottleneck than rotation/scale drift, and it
-  fails at candidate generation (the true location is never proposed), not ranking. Full controlled
-  analysis: `reports/ACCURACY_FORENSICS.md`.
+- **Crop uniqueness, not periodicity, governs accuracy.** Reference crops containing no
+  distinguishing macro structure (`uniqueness_score = 0`) score 43.8%, against 88.0% for all
+  others; crops crossing a mat or strip boundary score 89.8% against 54.4% for those crossing
+  neither. Periodicity correlates with failure because non-unique crops tend to be periodic — with
+  uniqueness held fixed it moves accuracy by well under one point. Analysis:
+  `experiments/crop_uniqueness_ceiling/REPORT.md` and `reports/ACCURACY_FORENSICS.md`.
+- Remaining failures are near-ties rather than blowouts: the correct location is scored within 0.05
+  ZNCC of the chosen one in every failing pair measured. Correlation fidelity at the true location,
+  not candidate ranking, is the active constraint.
+- Running two template passbands doubles candidate generation. `psf_selection=False` restores
+  single-arm cost where throughput matters more than the accuracy it provides.
 - Barrel distortion's effect on ground truth is deliberately kept small rather than analytically
   corrected, unlike rotation/scale drift, which is corrected.
 - `pipeline/ranking.py::rank_with_model` exists and is tested but is never the default; it must be
@@ -265,6 +295,8 @@ classical. Full analysis: `reports/V2_MODEL_EVALUATION_REPORT.md`.
 ## Documentation
 
 Deep dives live in `reports/`; the table below is a map, not a substitute for reading them.
+Every candidate change ever evaluated — integrated or rejected — keeps its own `REPORT.md` under
+`experiments/<name>/`, including the ones that failed and why.
 
 | Report | What it covers |
 |---|---|
@@ -274,10 +306,11 @@ Deep dives live in `reports/`; the table below is a map, not a substitute for re
 | `ACCURACY_FORENSICS.md` | Controlled single-factor analysis of what actually drives failure |
 | `V2_BASELINE_REPORT.md` | Full classical baseline benchmark breakdown |
 | `V2_MODEL_EVALUATION_REPORT.md` | Learned re-ranker evaluation (rejected by the integration gate) |
-| `GATE_EXCEPTIONS.md` | Why the scale-range and centre tie-break fixes were integrated as documented exceptions |
+| `GATE_EXCEPTIONS.md` | Every change shipped without a clean gate pass, with the criteria it failed and the evidence behind it |
 | `TIE_BREAK_IMPLEMENTATION.md` | Full technical derivation of the two-tier centre tie-break mechanism |
 | `ACCURACY_IMPROVEMENT_PHASE.md` | Integration evidence for the finer hypothesis-grid change |
 | `FINAL_RESULTS.md` | Consolidated results summary |
+| `PROJECT_STATUS.md` | Running record of phases completed, and the prioritised list of what remains |
 
 ---
 

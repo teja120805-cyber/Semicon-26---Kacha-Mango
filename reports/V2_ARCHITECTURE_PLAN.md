@@ -206,6 +206,12 @@ This gate is evaluated in `evaluation/benchmark.py` and its outcome (pass/fail p
 written into the relevant report — including a fail, if that's what happens. See
 `reports/FINAL_RESULTS.md` for how this was applied across every candidate approach tested.
 
+**Three changes are in production despite not passing all 7 criteria.** They are logged, with the
+specific criteria each failed and the evidence that justified shipping anyway, in
+`reports/GATE_EXCEPTIONS.md`. Anyone reading this section should read that file too — "in
+production" does not by itself mean "passed all 7." Each exception is granted for its own cited
+evidence; none of them weakens this gate for the next candidate.
+
 ---
 
 ## 9. Cross-generator testing strategy

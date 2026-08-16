@@ -1,5 +1,11 @@
 # Final Results
 
+> **Current production accuracy: 77.6%@5px pooled (n=156), as of 2026-08-16.** Reached via
+> PSF-matched dual-arm candidate generation (`reports/GATE_EXCEPTIONS.md` exception 3,
+> `experiments/psf_gated_selection/REPORT.md`), which corrected a ~16x sharpness mismatch between
+> the correlation template and the Search image. Any pooled-accuracy figure below that predates
+> that change is historical.
+
 Summary of the full audit-through-experiment pass over DriftSense V2. Detail lives in the other
 three `reports/` documents and each `experiments/<name>/REPORT.md`; this ties them together.
 

@@ -63,11 +63,16 @@ def build_candidate_pool(reference: np.ndarray, search: np.ndarray, *,
                           scale_hypotheses: tuple[float, ...] = DEFAULT_SCALE_HYPOTHESES,
                           rotation_hypotheses: tuple[float, ...] = DEFAULT_ROTATION_HYPOTHESES,
                           peaks_per_hypothesis: int = PEAKS_PER_HYPOTHESIS,
-                          suppression_radius_px: int = SUPPRESSION_RADIUS_PX) -> list[Candidate]:
+                          suppression_radius_px: int = SUPPRESSION_RADIUS_PX,
+                          psf_sigma: float = 0.0) -> list[Candidate]:
+    """`psf_sigma` is forwarded to matching.build_template - see its
+    docstring, and pipeline/localize.py's PSF_MATCH_SIGMA, for why the
+    template may be blurred into the Search image's passband. 0.0 (the
+    default) is the pre-2026-08-16 behaviour, bit-identical."""
     candidates: list[Candidate] = []
     for scale in scale_hypotheses:
         for rotation in rotation_hypotheses:
-            template = matching.build_template(reference, scale, rotation)
+            template = matching.build_template(reference, scale, rotation, psf_sigma)
             score_map = matching.correlate(search, template)
             for px, py, score in matching.top_k_peaks(score_map, peaks_per_hypothesis, suppression_radius_px):
                 cx = px + template.shape[1] / 2.0

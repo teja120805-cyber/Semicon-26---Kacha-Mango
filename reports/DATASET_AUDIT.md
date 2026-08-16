@@ -104,6 +104,13 @@ changing its family composition.
 
 ## 6. Verdict
 
+> **Update 2026-08-16 — the "more training data" hypothesis is falsified.** The remediation this
+> section proposes (roughly 6-7x more triplets) was built and tested in
+> `experiments/learned_reranker_v2/`: 537 triplets vs. the original 72, all 3 seeds. It still
+> regressed catastrophically (matched-splits 0.7727 -> 0.386-0.409). Triplet count and family
+> diversity were therefore **not** the cause of the learned model's failure, and more data of this
+> kind should not be expected to fix it.
+
 Dataset is sufficient for classical-pipeline evaluation post-fix. It remains insufficient for
 learned-component training, for a training-data-scale reason (bounded, specified above), not a
 seeding-correctness reason (already fixed). FinFET remains out of scope (DRAM-only, by explicit

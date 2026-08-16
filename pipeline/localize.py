@@ -31,6 +31,50 @@ from . import candidate_generation, feature_extraction, ranking, refinement
 
 AMBIGUITY_THRESHOLD = 0.92  # second-best/best ZNCC ratio at or above this => flagged ambiguous
 
+# --- PSF-matched dual-arm candidate generation (integrated 2026-08-16) -------
+#
+# The Reference and Search images travel different optical/resampling paths,
+# leaving the template ~16x sharper than the image it is correlated against
+# (see matching.build_template). Blurring the template by PSF_MATCH_SIGMA
+# closes that gap. It is a large win on clean-optics and periodic-ambiguity
+# cases and a real LOSS on acquisitions carrying non-stationary, non-Gaussian
+# corruption (barrel warp, spatially-varying vignette/gamma, impulse noise),
+# so it must not be applied unconditionally.
+#
+# Rather than trying to DETECT those acquisitions (a spectral blur estimator
+# was tried and provably cannot separate them - the families that gain span
+# estimated sigma 0.36-1.06 and those that lose span 0.34-1.03; see
+# experiments/psf_matched_adaptive/), the pool is built BOTH ways and the more
+# decisive arm wins, judged by the same top-vs-runner-up gap that predicts
+# correctness generally (experiments/oracle_ceiling_diagnostic/: correct pairs
+# median 0.0188, wrong pairs 0.0026). No threshold, no tuned constant, no
+# ground truth, and the harmed families revert to baseline byte-for-byte
+# because the unblurred arm simply wins on them.
+#
+# Evidence: pooled 0.7436 -> 0.7756 on the frozen benchmark and 0.6618 ->
+# 0.6985 on an independently-seeded one; 14 rescued / 4 broken across both
+# (sign test p = 0.031). Cost is 2x candidate generation. Integrated as a
+# documented gate exception (5/7 criteria) - see reports/GATE_EXCEPTIONS.md
+# exception 3 and experiments/psf_gated_selection/REPORT.md.
+PSF_MATCH_SIGMA = 1.6
+PSF_GAP_DISTINCT_PX = 10.0  # same distinctness radius as deduplicate_by_location
+
+
+def _decisiveness(candidates: list) -> float:
+    """Gap between the best candidate and the best candidate at a genuinely
+    DIFFERENT location. Larger means the winner is more clearly separated
+    from its nearest real rival.
+
+    Returns -inf when no distinct rival exists, so such an arm never wins the
+    comparison - matching the evaluated rule exactly.
+    """
+    ordered = sorted(candidates, key=lambda c: c.score, reverse=True)
+    top = ordered[0]
+    for c in ordered[1:]:
+        if (c.x - top.x) ** 2 + (c.y - top.y) ** 2 > PSF_GAP_DISTINCT_PX ** 2:
+            return float(top.score - c.score)
+    return float("-inf")
+
 
 @dataclass
 class LocalizationResult:
@@ -43,6 +87,11 @@ class LocalizationResult:
     ranking_mode: str
     num_candidates: int
     top_candidates: list = field(default_factory=list)
+    # Which PSF hypothesis won the dual-arm comparison for this pair: 0.0 =
+    # the historical sharp template, PSF_MATCH_SIGMA = the passband-matched
+    # one. Reported so the choice is visible per pair rather than hidden.
+    psf_sigma: float = 0.0
+    psf_decisiveness: float = 0.0
 
 
 def _preprocess(img: np.ndarray) -> np.ndarray:
@@ -58,7 +107,7 @@ def localize(reference_img: np.ndarray, search_img: np.ndarray, *,
              ranking_mode: str = "classical", model=None, device: str = "cpu",
              scale_hypotheses: tuple[float, ...] = candidate_generation.DEFAULT_SCALE_HYPOTHESES,
              rotation_hypotheses: tuple[float, ...] = candidate_generation.DEFAULT_ROTATION_HYPOTHESES,
-             top_k_report: int = 5) -> LocalizationResult:
+             top_k_report: int = 5, psf_selection: bool = True) -> LocalizationResult:
     """Run the full pipeline on one (Reference, Search) pair and return the
     predicted location, confidence, and ambiguity status. `ranking_mode`
     defaults to "classical" (the production pipeline); pass
@@ -70,15 +119,27 @@ def localize(reference_img: np.ndarray, search_img: np.ndarray, *,
     reference = _preprocess(reference_img)
     search = _preprocess(search_img)
 
-    raw_candidates = candidate_generation.build_candidate_pool(
-        reference, search, scale_hypotheses=scale_hypotheses, rotation_hypotheses=rotation_hypotheses,
-    )
-    if not raw_candidates:
-        raise RuntimeError("Candidate generation produced no candidates")
-    # Collapse redundant same-location detections from neighboring
-    # scale/rotation hypotheses before ranking/ambiguity - see
-    # candidate_generation.deduplicate_by_location docstring.
-    candidates = candidate_generation.deduplicate_by_location(raw_candidates)
+    # Build the pool under each PSF hypothesis and keep the more decisive
+    # one. sigma=0.0 is the historical single-arm behaviour and is always
+    # evaluated, so this can only differ from it when the PSF-matched arm is
+    # strictly more decisive. Ties go to sigma=0.0 (first in the tuple).
+    psf_sigmas = (0.0, PSF_MATCH_SIGMA) if psf_selection else (0.0,)
+    best = None
+    for sigma in psf_sigmas:
+        raw_candidates = candidate_generation.build_candidate_pool(
+            reference, search, scale_hypotheses=scale_hypotheses,
+            rotation_hypotheses=rotation_hypotheses, psf_sigma=sigma,
+        )
+        if not raw_candidates:
+            raise RuntimeError("Candidate generation produced no candidates")
+        # Collapse redundant same-location detections from neighboring
+        # scale/rotation hypotheses before ranking/ambiguity - see
+        # candidate_generation.deduplicate_by_location docstring.
+        pool = candidate_generation.deduplicate_by_location(raw_candidates)
+        gap = _decisiveness(pool)
+        if best is None or gap > best[1]:
+            best = (sigma, gap, pool)
+    psf_sigma, _, candidates = best
 
     if ranking_mode == "classical":
         ranked = ranking.rank_classical(candidates)
@@ -97,7 +158,8 @@ def localize(reference_img: np.ndarray, search_img: np.ndarray, *,
     ranked = ranking.apply_center_tiebreak(ranked, search.shape)
 
     winner = ranked[0]
-    refined_x, refined_y = refinement.refine(reference, search, winner)
+    # Refine on the same correlation surface the winner was selected on.
+    refined_x, refined_y = refinement.refine(reference, search, winner, psf_sigma)
 
     pooled_scores = sorted((c.score for c in candidates), reverse=True)
     amb_ratio = feature_extraction.ambiguity_ratio(pooled_scores)
@@ -111,4 +173,5 @@ def localize(reference_img: np.ndarray, search_img: np.ndarray, *,
             {"x": c.x, "y": c.y, "score": c.score, "scale": c.scale, "rotation_deg": c.rotation_deg}
             for c in ranked[:top_k_report]
         ],
+        psf_sigma=float(psf_sigma), psf_decisiveness=float(best[1]),
     )

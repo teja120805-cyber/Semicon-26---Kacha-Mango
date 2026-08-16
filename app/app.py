@@ -225,6 +225,29 @@ div[data-testid="stMetricLabel"] {
 st.markdown(THEME_CSS, unsafe_allow_html=True)
 
 
+def _psf_arm_note(result) -> str:
+    """One-line explanation of which template the dual-arm PSF selection
+    picked for this pair, and how decisively.
+
+    The pipeline builds the candidate pool twice - once with the historical
+    sharp template and once blurred into the Search image's passband - and
+    keeps whichever produces a clearer winner. Surfacing the choice keeps a
+    per-pair branch from being invisible to whoever reads the result. See
+    pipeline/localize.py::PSF_MATCH_SIGMA and reports/GATE_EXCEPTIONS.md
+    exception 3.
+    """
+    sigma = getattr(result, "psf_sigma", 0.0)
+    gap = getattr(result, "psf_decisiveness", float("nan"))
+    gap_txt = f"{gap:.4f}" if np.isfinite(gap) else "n/a (no distinct rival)"
+    if sigma and sigma > 0:
+        return (f"Template: **PSF-matched** (blur sigma {sigma:.1f}) - matched to the Search "
+                f"image's passband, which won the dual-arm comparison here. "
+                f"Decisiveness (top vs. best rival >10px away): {gap_txt}")
+    return (f"Template: **standard** (no PSF blur) - the sharp template won the dual-arm "
+            f"comparison here, so this pair is unchanged from the pre-2026-08-16 pipeline. "
+            f"Decisiveness (top vs. best rival >10px away): {gap_txt}")
+
+
 # --------------------------------------------------------------------------
 # Cached data loaders - every one reads a file this project's own scripts
 # produced; nothing here is recomputed silently on each page load.
@@ -665,6 +688,7 @@ elif section == "Generate Sample":
             m2.metric("Confidence (ZNCC)", f"{result.confidence:.3f}")
             m3.metric("Ambiguity ratio", f"{result.ambiguity_ratio:.3f}")
             m4.metric("Runtime", f"{result.runtime_s:.2f} s")
+            st.caption(_psf_arm_note(result))
             if result.ambiguous:
                 st.warning("Flagged AMBIGUOUS: a second candidate location scored nearly as well as the winner.")
 
@@ -705,6 +729,7 @@ elif section == "Live Localization":
                 m2.metric("Confidence (ZNCC)", f"{result.confidence:.3f}")
                 m3.metric("Ambiguity ratio", f"{result.ambiguity_ratio:.3f}")
                 m4.metric("Runtime", f"{result.runtime_s:.2f} s")
+                st.caption(_psf_arm_note(result))
                 if result.ambiguous:
                     st.warning("Flagged AMBIGUOUS: a second candidate location scored nearly as well as the winner.")
                 else:
@@ -898,6 +923,15 @@ elif section == "Experiment Results":
             "**A6 — multiway-gated centre tie-break**: zero regressions across 2 independent datasets, "
             "one confirmed catastrophic rescue (`ch_worst_case_006`, 118.5px → 4.6px); same structural "
             "reason for failing criteria 1/2. `experiments/multiway_tiebreak_v1/REPORT.md`"
+        )
+        st.markdown(
+            "**PSF-matched dual-arm candidate generation (2026-08-16)**: the Reference/Search "
+            "acquisition paths leave the template ~16x sharper than the image it is matched against. "
+            "The pool is now built both with and without a passband-matching blur, keeping whichever "
+            "arm is more decisive. Pooled **0.7436 → 0.7756**, replicated on a second seed "
+            "(0.6618 → 0.6985); 14 rescued / 4 broken across both, sign test **p = 0.031**. First "
+            "change in the project to pass criteria 1, 2 and 3 together; fails 4/5 on 1–2 pair "
+            "margins. `experiments/psf_gated_selection/REPORT.md`"
         )
         st.caption("Full rationale for treating these as exceptions rather than gate rewrites: `reports/GATE_EXCEPTIONS.md`.")
 

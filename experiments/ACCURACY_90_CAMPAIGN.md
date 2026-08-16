@@ -57,6 +57,21 @@ easy it is for a flawed re-scoring formula to look like progress on a single-see
 it fully closes out the "peak-prominence reranking" family of ideas (`prominence_rerank`, #8,
 #9) as a productive direction with this scoring mechanism.
 
+> ## ⚠️ CORRECTION (2026-08-16) — the section below is WRONG
+>
+> `experiments/oracle_ceiling_diagnostic/` measured the claim in the next section directly, on
+> every failing pair, and **falsified it**. The "4x gap" (0.187 at ground truth vs. 0.775 at the
+> decoy) does not occur anywhere in the benchmark: across all 39 evaluable failures the true
+> location scores **0.612–0.937** under an ideal warp, and the decoy's largest advantage is a
+> ratio of **1.048** — every failure is a *near-tie*, not a blowout. The 0.187 figure was produced
+> inside `pyramid_periodicity_search`'s own blurred coarse stage, not measured at full resolution
+> under a fitted warp, and was then generalized from one pair to the whole population.
+>
+> The correct decomposition of the 40 failures is 45% candidate-generation (true location never
+> proposed), 22.5% tie-break (true location is the runner-up, losing by <0.01), and 32.5% scoring
+> (the real tail the original claim mistook for the whole). See that experiment's `REPORT.md`.
+> Read the section below as a record of what was believed during the campaign, not as fact.
+
 ## The central, repeatedly-confirmed finding
 
 Four independent, structurally different mechanisms (#1, #3, #5, #6 above - spatial consensus,
