@@ -256,7 +256,84 @@ Also produced but **not** integrated: a confidence-gating result showing the pip
 51% of pairs at 97.5% accuracy, or 69% at 92.5% (`experiments/crop_uniqueness_ceiling/` §4). That
 is a calibration change rather than an accuracy one and was left as a candidate.
 
+## Phase — reachability campaign (2026-08-17)
+
+Six independent experiments, consolidated in `experiments/REACHABILITY_CAMPAIGN.md`. **Production
+accuracy is unchanged at 77.6%@5px — no accuracy improvement was found.** One calibration
+improvement was, and was integrated. **The frozen 156-pair benchmark was run 0 times**, so it
+retains full statistical value for future work.
+
+**The measurement that reframes the problem.** **74% of remaining failures are unreachable** —
+ground truth is not within 5px of *any* pooled candidate, so no re-scoring, re-ranking or
+tie-breaking stage can fix them (19 failures across two surfaces; `development` 4/7,
+a fresh degraded 40-pair surface 10/12). Sharper than the 45% candidate-generation figure from
+`experiments/oracle_ceiling_diagnostic/`; both were measured on different surfaces, but the
+direction is consistent and stronger here.
+
+**And recall is not the constraint either.** Widening candidate generation lifts pool recall
+0.750 → 0.900 and converts **none** of it into accuracy: 144 configurations, **zero** rescues,
+breaks rising monotonically with recall. Production accuracy decomposes as
+`recall × selector efficiency` = 0.750 × 0.93 — **the selector is already ~93% efficient on the
+pool it is handed.** The lever is neither better scoring nor more candidates.
+
+**Verdicts.** `discriminability_weighted/` (P3 weighted ZNCC) — REJECT, 0 rescues in 60 configs.
+`wide_pool_rescoring/` (wider pool + re-scorer, the one untested combination) — REJECT, 0 rescues
+in 144 configs. `psr_confidence/` (P4 PSR) — REJECT as dual-arm selector (0.708 → 0.583) and as a
+confidence statistic (AUC 0.577 vs the existing pool gap's 0.964), refuting
+`RESEARCH_SURVEY_SCORING.md` §P4's prediction. `anisotropic_psf/` — NOT SUPPORTED (+8.3pp on
+`development`, exactly 0 effect on 40 independent pairs, p = 0.25; **deliberately not integrated**).
+`template_fidelity_ablation/` (spatial high/band-pass) — REJECT, monotone harm −2/−4/−6 at σ 8/16/32.
+`aperiodic_anchor/` (sub-model spatial prior) — REJECT, 0 rescues at every radius.
+
+**Integrated: `AMBIGUITY_THRESHOLD` 0.92 → 0.990** (gate exception 4 — a *fourth kind*, "not
+evaluable by the gate" rather than "fails it"). Item 5 below was right that the constant is
+miscalibrated but incomplete on why: the **statistic** is sound (AUC 0.933–0.949), only the
+constant was wrong. Fitted on n=64, evaluated once on a held-back seed, then confirmed on the
+frozen benchmark by a full `scripts/evaluate_model.py` re-run (2026-08-17, n=156):
+
+| threshold | flagged | flag rate | precision | failure recall | answered | acc on answered |
+|---|---:|---:|---:|---:|---:|---:|
+| 0.92 (previous) | 128 | 0.821 | 0.273 | 1.000 | 0.179 | 1.0000 |
+| **0.990 (shipped)** | 55 | 0.353 | **0.545** | 0.857 | **0.647** | **0.9505** |
+
+The **128/156** figure exactly reproduces the count recorded in item 5 below — independent
+confirmation that the constant, not the statistic, was the defect. **Pooled accuracy@5px returned
+0.7756 and catastrophic rate 0.1410, both unchanged**, which was the pass condition; the run was a
+tripwire, not a measurement. Predictions were separately verified bit-identical per pair by a
+same-process A/B over 100 pairs (`experiments/psr_confidence/verify_wide.py`).
+
+**Two claims in this document that the campaign corrected:**
+
+1. **`wider_candidate_pool`'s "structural no-op" has partly expired.** Verified by direct
+   attribution: with `ranking`'s multiway tier disabled, widening is a bit-exact no-op at every
+   pool width; with it enabled, it changes predictions. The arg-max argument is still correct — the
+   arg-max is simply no longer the last word, because the multiway centre tie-break (integrated
+   2026-08-15, exception 2) makes pool width observable. Impact is 1 pair and accuracy-neutral, so
+   this is a documentation-correctness issue, but the no-op should no longer be described as
+   structural and permanent.
+2. **Three mechanisms now close whole families, not one.** Frequency-domain reshaping fails for a
+   second reason P1's post-mortem missed: the aperiodic boundary content that discriminates
+   locations lives substantially at **low** spatial frequency, so high-pass filtering destroys the
+   discriminator rather than merely amplifying noise. Separately, a spatial prior is only useful if
+   its errors are *independent* of what it filters — the aperiodic anchor is sub-pixel accurate on
+   pairs that already work but nearer truth on only 5/12 failures, so it deletes the right answer
+   exactly when needed. That closes the KLA/Cognex sub-model family as currently framed.
+
+**Methodology note.** Item 3 below (`development` has no degraded-acquisition family) was addressed
+by generating two additional surfaces with the production generator at fixed seeds — `tune_degraded`
+(314159, 40 pairs) and `validate_fresh` (271828, 40 pairs). This is a deliberate deviation from
+"tune on development only", flagged in every report rather than buried: these are newly generated
+pairs, not frozen scoring surfaces. `anisotropic_psf/` vindicates it — that change would otherwise
+have shipped as a +8.3pp win on `development` alone.
+
 ## Not yet started / possible future work
+
+**Superseded by the 2026-08-17 campaign:** items 1 and 5 below. Item 5 is done (integrated). Item 1
+(template fidelity) is still the only lever the evidence supports, but its three obvious routes are
+now closed — jitter matching (no effect), spectral/spatial filtering (harmful), and restricting to
+the aperiodic region (harmful). Also **do not add shear hypotheses**: ruled out by arithmetic, since
+`apply_raster_shear_drift` runs after the 10x downsample and 1.0px across 1000 rows is 0.1px across
+a 100px template, an order of magnitude under tolerance.
 
 **Known-good next steps, in priority order:**
 

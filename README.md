@@ -48,7 +48,7 @@ ZNCC matching, no deep learning in the production path.
 | P90 / P95 error | 69.8 px / 433.8 px |
 | Failure rate >10px | 21.2% |
 | Catastrophic (>50px) rate | 14.1% |
-| Mean runtime | 6.3 s/pair |
+| Mean / median runtime | 3.72 s/pair / 3.62 s/pair (machine-dependent) |
 | Pairs evaluated | 156, across 5 independent splits |
 
 | Split | Pairs | Accuracy @5px |
@@ -62,6 +62,18 @@ ZNCC matching, no deep learning in the production path.
 Error is strongly bimodal: the median prediction lands within a third of a pixel, while the
 remaining failures are wrong-location misses rather than imprecise ones. Improving accuracy is
 therefore a question of candidate disambiguation, not subpixel precision.
+
+**Selective prediction.** Every result carries an `ambiguous` flag derived from the candidate
+pool's own score distribution. Withholding flagged results trades coverage for reliability:
+
+| Operating point | Coverage | Accuracy |
+|---|---:|---:|
+| All predictions | 100% (156/156) | 77.6% |
+| **Unflagged predictions only** | **64.7%** (101/156) | **95.1%** |
+
+The flag captures 85.7% of all failures. Both rows are measured on the same frozen 156-pair
+benchmark as the tables above; [Known Limitations](#known-limitations) records what it does not
+capture.
 
 Full breakdown, all 8 required plots, and per-family/per-condition results: `outputs/reports/`,
 `outputs/plots/`, or the Streamlit app's Benchmark Dashboard. Numbers regenerate deterministically —
@@ -83,7 +95,10 @@ see [Reproducibility](#reproducibility).
 
 If several candidate locations score comparably, the pipeline also flags the prediction as
 `ambiguous` (see `LocalizationResult.ambiguous` / `.ambiguity_ratio` in `pipeline/localize.py`)
-rather than silently guessing.
+rather than silently guessing. The threshold governing that flag is calibrated rather than assumed:
+it was fitted on tuning surfaces, then evaluated once on a held-back, independently-seeded set
+before adoption. At the shipped value it fires on 35.3% of pairs and captures 85.7% of all
+failures. Derivation and evidence: `reports/GATE_EXCEPTIONS.md`, exception 4.
 
 ---
 
@@ -237,14 +252,20 @@ condition, periodicity, and uniqueness. `plots.py` generates the 8 required plot
 applies a mandatory 7-criterion integration gate comparing any candidate change against the frozen
 classical baseline before it can be merged into production.
 
-Three production behaviours are integrated as **documented gate exceptions** — changes shipped
-despite not clearing all seven criteria, each logged with the criteria it failed and the evidence
-that justified it: the literal 9:1–11:1 scale range, the "closest to Search-image centre" tie-break
-rule, and template passband matching. The first two are narrowly-scoped spec-compliance fixes whose
-effect surface is too small for the gate's blanket "must broadly improve pooled validation/held_out"
-bar; the third is a broad change validated across two independently-seeded datasets whose two
-failing criteria are single-pair margins. Full rationale and evidence: `reports/GATE_EXCEPTIONS.md`.
-"In production" does not by itself mean "passed all seven"; that file is the authoritative list.
+Four production behaviours are integrated as **documented gate exceptions**, each logged with the
+criteria it did not clear and the evidence that justified it:
+
+| # | Change | Why it is an exception |
+|---|---|---|
+| 1 | Literal 9:1–11:1 scale range | Narrowly-scoped spec-compliance fix; `validation` contains none of the affected families, so criterion 1 cannot register it |
+| 2 | "Closest to Search-image centre" tie-break | Effect surface is a rare tie condition in specific families, too small for the gate's pooled-improvement bar |
+| 3 | Template passband matching | Broad change validated across two independently-seeded datasets; both failing criteria are single-pair margins |
+| 4 | Ambiguity-threshold calibration | **Not evaluable by the gate** rather than failing it — criteria 1–6 all measure prediction quality, and this change provably cannot alter a prediction |
+
+Exception 4 is a different kind from the first three and is labelled as such: predictions,
+accuracy@5px, catastrophic rate and runtime were verified bit-identical before and after, per pair.
+Full rationale and evidence: `reports/GATE_EXCEPTIONS.md`. "In production" does not by itself mean
+"passed all seven"; that file is the authoritative list.
 
 A candidate learned re-ranker (`experiments/embedding_reranker_v1/`) failed the integration gate on
 every criterion, across all 3 training seeds, and was not integrated — production ranking remains
@@ -261,11 +282,30 @@ classical. Full analysis: `reports/V2_MODEL_EVALUATION_REPORT.md`.
 - Model candidates are trained and gated across 3 independent seeds.
 - Generator/dataset/model version strings are recorded in every metadata file and shown in the
   app's System Information page.
-- `opencv-python-headless` is pinned to an **exact** version (`==5.0.0.93`) rather than a floor. A
-  cross-machine comparison found OpenCV's 4.x→5.x major version bump changes the internal numerics
-  of `warpAffine` / `remap` / `GaussianBlur` enough to shift pooled accuracy@5px by several
-  percentage points from an identical seed. Reproduce the numbers above with the pinned version
-  installed exactly.
+- `opencv-python-headless` is pinned to an **exact** version (`==5.0.0.93`) rather than a floor,
+  because OpenCV's 4.x→5.x bump changes the internal numerics of `warpAffine` / `remap` /
+  `GaussianBlur`. The pin is load-bearing for **dataset generation**, and the mechanism is sharper
+  than a rounding difference: `image_search` applies Poisson shot noise after those transforms, and
+  because Poisson sampling uses rejection, a last-ulp difference in a single pixel's rate parameter
+  desynchronises the entire subsequent noise stream. The result is an image with identical
+  structure but a completely different noise realisation —
+  `generator/test_dataset_validation.py`'s byte-equality check is designed to catch exactly this and
+  does. Regenerate the dataset only with the pinned version.
+
+- **Localization itself is far more robust than generation.** Verified directly: the full 156-pair
+  benchmark was re-run on a different OS (Linux vs Windows) and a different OpenCV major version
+  (4.13.0 vs the pinned 5.0.0.93), against identical input images.
+
+  | Quantity | Result |
+  |---|---|
+  | accuracy @1px / @2px / @5px | **identical to the last digit** |
+  | Pairs changing side of the 5px line | **0 of 156** |
+  | `ambiguous` flag agreement | **100%** |
+  | Max coordinate difference | 2.4 × 10⁻³ px |
+
+  So the deliverable — predicted coordinates — reproduces across environments even when the
+  dataset bytes do not. Runtime is the one figure that is genuinely machine-dependent: 3.72 s/pair
+  on the reference machine, 6.08 s/pair on a 2-core container.
 
 ---
 
@@ -280,6 +320,18 @@ classical. Full analysis: `reports/V2_MODEL_EVALUATION_REPORT.md`.
 - Remaining failures are near-ties rather than blowouts: the correct location is scored within 0.05
   ZNCC of the chosen one in every failing pair measured. Correlation fidelity at the true location,
   not candidate ranking, is the active constraint.
+- **In roughly three-quarters of failures the true location is never proposed at all** — it is not
+  within 5px of any candidate in the pool, so no re-scoring, re-ranking or tie-breaking stage can
+  reach them (74% of 19 failures, measured across two surfaces). Widening candidate generation
+  raises pool recall from 0.750 to 0.900 and converts none of it into accuracy across 144 tested
+  configurations. Accuracy decomposes as `recall × selector efficiency`, and the selector is
+  already ~93% efficient on the pool it is given, so neither better scoring nor more candidates is
+  the active lever. Six experiments testing that space are consolidated in
+  `experiments/REACHABILITY_CAMPAIGN.md`; all were rejected.
+- The `ambiguous` flag is a reporting output only. Nothing in the pipeline reads it to make a
+  decision, and it captures 85.7% of failures rather than all of them — a triage aid, not a
+  correctness guarantee. Its precision depends on the failure base rate of the population measured,
+  so it should be quoted against a stated population rather than as a single fixed figure.
 - Running two template passbands doubles candidate generation. `psf_selection=False` restores
   single-arm cost where throughput matters more than the accuracy it provides.
 - Barrel distortion's effect on ground truth is deliberately kept small rather than analytically
@@ -311,6 +363,15 @@ Every candidate change ever evaluated — integrated or rejected — keeps its o
 | `ACCURACY_IMPROVEMENT_PHASE.md` | Integration evidence for the finer hypothesis-grid change |
 | `FINAL_RESULTS.md` | Consolidated results summary |
 | `PROJECT_STATUS.md` | Running record of phases completed, and the prioritised list of what remains |
+| `RESEARCH_SURVEY_SCORING.md` | External literature/patent survey of scoring approaches, and the ranked proposals drawn from it |
+| `HACKATHON_COMPLIANCE_CHECKLIST.md` | Point-by-point mapping of every stated problem-statement requirement to where it is satisfied |
+
+Two consolidated experiment campaigns sit alongside these, in `experiments/`:
+
+| Campaign | What it covers |
+|---|---|
+| `ACCURACY_90_CAMPAIGN.md` | Nine independent attempts at a 90% target, all rejected, and the shared failure mode |
+| `REACHABILITY_CAMPAIGN.md` | Six further experiments (weighted ZNCC, wider pool, PSR, anisotropic PSF, spectral/spatial filtering, aperiodic anchoring) — five rejected, one integrated; establishes the reachability ceiling that bounds the whole re-scoring class |
 
 ---
 

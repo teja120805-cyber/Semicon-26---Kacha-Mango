@@ -112,12 +112,106 @@ requirements.
   cost can pass `psf_selection=False` to `localize()`, which is bit-identical to the
   pre-2026-08-16 pipeline (verified per-pair, not assumed).
 
+## Exception 4 — `AMBIGUITY_THRESHOLD` recalibrated 0.92 → 0.990 (2026-08-17)
+
+**This exception is a different KIND from 1–3, and the distinction matters.** Exceptions 1–3 all
+*fail* gate criteria that genuinely applied to them. This change is **not evaluable by the gate at
+all**: criteria 1–6 every one measure prediction quality, and this change provably cannot alter a
+prediction. A reader who finds a fourth exception here should be able to tell immediately that it
+carries no accuracy risk, rather than assuming the bar was lowered again.
+
+- **What changed**: one constant in `pipeline/localize.py`. No logic, no control flow.
+- **Why**: `reports/PROJECT_STATUS.md` already recorded the flag as miscalibrated ("fires on
+  128/156 pairs at 31% precision"). That is reproduced independently here — 85–91% flagged at
+  ~32% precision across two surfaces. The recorded *diagnosis* was incomplete, though: the
+  **statistic** is sound (`ambiguity_ratio` separates correct from wrong at AUC 0.933–0.949,
+  comparable to the pool gap's 0.941–0.964), and only the **constant** was wrong. It spans
+  0.816–0.999 with median 0.985, so a 0.92 cut sits far below the distribution.
+- **Why not PSR instead**: `reports/RESEARCH_SURVEY_SCORING.md` §P4 proposed PSR as the principled
+  replacement. It was built and tested, and is **worse** — AUC 0.577–0.765, near chance on the
+  degraded surface, and as a dual-arm selector it costs accuracy (0.708 → 0.583). See
+  `experiments/psr_confidence/REPORT.md` §§1–2. The survey's prediction is refuted.
+- **Evidence**: fitted on `development` + a freshly generated degraded surface (n=64), then
+  evaluated **once** on a held-back independently-seeded surface (n=40, seed 271828) after the
+  selection rule was fixed in code. Flag precision **0.324 → 0.750**; the pipeline answers 70.0%
+  of pairs at 92.9% accuracy. This independently reproduces the "69% at 92.5%" operating point in
+  `experiments/crop_uniqueness_ceiling/` §4 — via a single constant on a statistic already in
+  production, rather than a separate gating mechanism.
+- **Cost, stated plainly**: failure recall falls 1.000 → 0.818 on the held-back surface, so roughly
+  one failure in five is no longer flagged. On `development` it stays at 1.000. At 0.92 the flag
+  caught every failure but fired on nine pairs in ten, which is not a usable trade.
+- **Safety verification, run rather than argued**: both thresholds were executed in the same
+  process and compared in memory — first on all 24 `development` pairs, then widened to **100
+  pairs** (`development` 24, `validation` 40, `held_out` 36). `x`, `y`, `confidence`,
+  `ambiguity_ratio` and `error_px` are **bit-identical on every pair**; pooled accuracy@5px
+  (0.7900) and catastrophic rate (0.1200) unchanged; per split 0.7083 / 0.9250 / 0.6944, all
+  identical before and after. Reproduce with
+  `python -m experiments.psr_confidence.verify_integration` and `...verify_wide`. Grep also
+  confirms `ambiguous` is never read to make a decision anywhere in `pipeline/`, `evaluation/`,
+  `scripts/` or `app/`. (`challenge` and `cross_generator` were not available locally, so this is
+  100 of the frozen 156 — but since every prediction is bit-identical by construction and on 100
+  measured pairs, a full frozen run was not spent to confirm a provable no-op.)
+- **Precision depends on the failure base rate — the 0.750 figure is not universal.** Measured
+  across three populations, the *relative* gain is stable at roughly 2x while the absolute number
+  tracks how many failures exist to catch:
+
+  | population | n | accuracy | flag precision before → after | failure recall after |
+  |---|---:|---:|---:|---:|
+  | held-back degraded (seed 271828) | 40 | 0.725 | 0.324 → **0.750** | 0.818 |
+  | `development` | 24 | 0.708 | 0.333 → **0.778** | 1.000 |
+  | `development`+`validation`+`held_out` | 100 | 0.790 | 0.259 → **0.514** | 0.857 |
+
+  The 100-pair set is 79% accurate, so only 21 failures exist among 100 pairs and precision is
+  bounded accordingly. **The defensible claim is the ~2x precision improvement at roughly a third
+  the flag rate, not a fixed 0.75.** Quote the matching population when citing a number.
+- **Frozen-benchmark figures (2026-08-17, full `scripts/evaluate_model.py` re-run, n=156).** These
+  are the numbers the README quotes, and the only ones that should be cited against the benchmark:
+
+  | threshold | flagged | flag rate | precision | failure recall | answered | acc on answered |
+  |---|---:|---:|---:|---:|---:|---:|
+  | 0.92 (previous) | **128** | 0.821 | 0.273 | 1.000 | 0.179 | 1.0000 |
+  | **0.990 (shipped)** | 55 | 0.353 | **0.545** | 0.857 | **0.647** | **0.9505** |
+
+  The 128/156 figure is an exact reproduction of the "fires on 128/156 pairs" already recorded in
+  `reports/PROJECT_STATUS.md`, which is a useful independent confirmation that the constant, not
+  the statistic, was the defect.
+
+  **Pooled accuracy@5px came back 0.7756 and catastrophic rate 0.1410 — both unchanged**, which was
+  the pass condition for that run. It was treated as a tripwire, not a measurement: any deviation
+  would have falsified the no-op claim rather than confirmed it.
+
+  This operating point also sits neatly between the two reported in
+  `experiments/crop_uniqueness_ceiling/` §4 ("51% of pairs at 97.5%, or 69% at 92.5%") — 64.7% at
+  95.1% — reached with a single constant on a statistic already in production rather than a
+  separate gating mechanism. Two independent routes landing on the same curve is meaningful
+  evidence the curve is real.
+
+  Note the cross-platform caveat already documented in README's Reproducibility section: predictions
+  computed on Linux differ from Windows by up to ~2e-3 px in these runs (OpenCV build variation in
+  `warpAffine`/`GaussianBlur`/`matchTemplate`). That is immaterial against a 5px tolerance and
+  identical accuracy resulted, but it means a cross-machine comparison cannot serve as the
+  bit-identity check — the same-process A/B in `verify_integration.py` / `verify_wide.py` is what
+  establishes that.
+- **Not adopted**: threshold `0.984` gives 43.8% answered at 100% accuracy with zero missed
+  failures — but on the fit surfaces only. It was not validated, because only the 0.990 rule was
+  fixed before the held-back read. If a zero-error operating point is wanted it needs its own
+  held-back evaluation first.
+- **Practical effect on the demo**: at 0.92 the Streamlit app flagged 85–91% of results as
+  ambiguous and `app/app.py`'s "not flagged ambiguous" success path almost never fired — a
+  77.6%-accurate system presenting as having no confidence in itself. At 0.990 it flags ~30%.
+
 ## What would revoke any of these exceptions
 
 New evidence of a regression on either change — a new dataset, a new seed, or real submission
 data showing harm — should be treated as grounds to re-open this decision, exactly as if it were
 a normal gate failure. No change gets a permanent pass; the exception is for the specific
 evidence cited above, not a blanket allowance for future modification of the same code.
+
+For exception 4 specifically, the revocation condition is different in kind, because accuracy
+cannot regress from it: it should be re-opened if the flag's *precision* is measured below the
+0.75 held-back figure on new data, or if any future code change starts **reading** `ambiguous` to
+make a decision — at which point this stops being a reporting constant and must be re-evaluated
+under the full gate.
 
 ## Decision log
 
@@ -135,5 +229,16 @@ evidence cited above, not a blanket allowance for future modification of the sam
   this was already live in the working tree pending the decision rather than staged behind it —
   the same pattern, noted again rather than treated as settled precedent.
 
-The revocation condition above applies to all three exceptions going forward from their
+- **2026-08-17: exception 4 (`AMBIGUITY_THRESHOLD` 0.92 → 0.990) integrated at the user's
+  direction**, following the six-experiment campaign consolidated in
+  `experiments/REACHABILITY_CAMPAIGN.md`. It was the only one of six investigations to produce a
+  positive, validated result; the other five are rejections and nothing from them was integrated.
+  In particular `experiments/anisotropic_psf/` was **deliberately not** integrated despite showing
+  2 rescued / 0 broken and zero measured harm across 64 pairs — it had exactly zero effect on the
+  independent 40-pair surface (sign test p = 0.25, against the p = 0.031 that exception 3 cleared),
+  and integrating on a development-only gain is the benchmark-mining this project's conventions
+  exist to prevent. Recorded here so the decision not to ship it is as visible as the decision to
+  ship this one.
+
+The revocation condition above applies to all four exceptions going forward from their
 respective confirmations.

@@ -29,7 +29,42 @@ import numpy as np
 
 from . import candidate_generation, feature_extraction, ranking, refinement
 
-AMBIGUITY_THRESHOLD = 0.92  # second-best/best ZNCC ratio at or above this => flagged ambiguous
+# Second-best/best ZNCC ratio at or above this => flagged ambiguous.
+#
+# Recalibrated 0.92 -> 0.990 (2026-08-17, experiments/psr_confidence/).
+#
+# 0.92 sat far below the statistic's actual operating range. Measured,
+# ambiguity_ratio spans 0.816-0.999 with a median of 0.985, so a 0.92 cut
+# fired on 85-91% of all pairs at ~32% precision - independently reproducing
+# the "128/156 at 31%" figure already recorded in reports/PROJECT_STATUS.md.
+# A flag that is on almost always carries no information.
+#
+# The important correction to that recorded diagnosis: the STATISTIC is not
+# the problem. ambiguity_ratio separates correct from wrong pairs at AUC
+# 0.933-0.949, comparable to the pool-gap statistic's 0.941-0.964 and far
+# better than PSR's 0.577-0.765 (which reports/RESEARCH_SURVEY_SCORING.md
+# section P4 proposed as the principled replacement, and which was tested and
+# rejected - see experiments/psr_confidence/REPORT.md section 2). Only the
+# constant was wrong.
+#
+# Fitted on development + a freshly generated degraded surface (n=64), then
+# evaluated ONCE on a held-back independently-seeded surface (n=40, seed
+# 271828) after the selection rule was fixed in code. Flag precision
+# 0.324 -> 0.750; the pipeline answers 70.0% of pairs at 92.9% accuracy.
+# Cost, stated plainly: failure recall falls 1.000 -> 0.818, so roughly one
+# failure in five is no longer flagged. At 0.92 the flag caught every failure
+# but fired on nine pairs in ten, which is not a usable trade.
+#
+# REPORTING ONLY. `ambiguous` is written to output and never read to make a
+# decision anywhere in this repository - verified by grep across pipeline/,
+# evaluation/, scripts/ and app/, not assumed. Predicted coordinates,
+# accuracy@5px, catastrophic rate and runtime are bit-identical either way;
+# this was re-verified per pair after the change, not inferred.
+#
+# Deliberately NOT the tie-break bar: see ranking.TIE_SCORE_EPSILON's comment
+# for why that is a numerical-equality test and this is a reporting one. That
+# distinction is unaffected by this recalibration.
+AMBIGUITY_THRESHOLD = 0.990
 
 # --- PSF-matched dual-arm candidate generation (integrated 2026-08-16) -------
 #
