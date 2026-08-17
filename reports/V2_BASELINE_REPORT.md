@@ -11,6 +11,12 @@
 > `reports/ACCURACY_IMPROVEMENT_PHASE.md` for the integration evidence and current per-condition
 > results.
 >
+> **The runtime and hypothesis-count figures below are superseded too, not just accuracy**
+> (clarified 2026-08-17). This report's "0.51 s/pair, 25 scale x rotation hypotheses/pair" describes
+> the pre-integration configuration. Production now evaluates an **11 scales x 9 rotations = 99**
+> hypothesis grid per pair, in two template passbands, at **3.72 s/pair mean / 3.62 s/pair median**
+> (machine-dependent — see README.md's "Runtime, hardware and timing method").
+>
 > **Regenerated 2026-08-15** (prior to the above) after the Phase 2/4 dataset audit found a real
 > cross-split instance-leakage bug in the RNG seed derivation (see `reports/DATASET_AUDIT.md` section
 > 2). The seeding was fixed (`generator/dataset_generator.py`, now `driftsensev2.1.0`) and the full
@@ -51,7 +57,7 @@ breakdown alone.
 | Max error | 900.8 px |
 | Failure rate (>10px) | 29.5% |
 | Failure rate (>50px) | 18.6% |
-| Mean runtime/pair | 0.51 s (CPU, 25 scale x rotation hypotheses/pair) |
+| Mean runtime/pair | 0.51 s (CPU, 25 scale x rotation hypotheses/pair) — *superseded: production is now 3.72 s/pair over 11 x 9 = 99 hypotheses* |
 
 **Read this distribution as bimodal, not "69% good, 31% a little off"**: the huge gap between the
 median (0.34px, essentially perfect) and the mean (65.3px) means most pairs are found almost exactly

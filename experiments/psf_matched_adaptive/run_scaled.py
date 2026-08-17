@@ -16,7 +16,8 @@ No frozen-benchmark result is used to set k.
 """
 import json, os, sys, time
 import numpy as np, pandas as pd, cv2
-sys.path.insert(0, "/tmp/driftsense"); sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, PROJECT_ROOT); sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from evaluation.evaluate import load_manifest
 from evaluation import benchmark, metrics
 from harness import localize_adaptive
@@ -24,8 +25,8 @@ from spectral_sigma import estimate_sigma
 
 K = 1.6 / 1.029
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "outputs")
-DATA_ROOT = "/tmp/driftsense/data"
-BASELINE_CSV = "/tmp/driftsense/outputs/reports/per_pair_results.csv"
+DATA_ROOT = os.path.join(PROJECT_ROOT, "data")
+BASELINE_CSV = os.path.join(PROJECT_ROOT, "outputs", "reports", "per_pair_results.csv")
 SPLITS = ["development", "validation", "held_out", "challenge", "cross_generator"]
 
 def run_split(split):

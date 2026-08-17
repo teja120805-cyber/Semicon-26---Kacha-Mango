@@ -1,0 +1,24 @@
+# Drift-Sense — presentation theme only.
+#
+# This file changes nothing about the algorithm, the generator, the evaluation
+# or any stored artifact. It sets Streamlit's *native widget* palette (select
+# boxes, sliders, uploaders, tables, expanders) to the same graphite instrument
+# palette that app/app.py's own CSS uses, so the built-in controls do not render
+# as light-theme islands inside a dark console.
+#
+# app/app.py also ships defensive CSS for these surfaces, so the application
+# still renders correctly if it is launched from a working directory where this
+# file is not discovered.
+
+[theme]
+base                = "dark"
+primaryColor        = "#3B9EFF"
+backgroundColor     = "#0B0E13"
+secondaryBackgroundColor = "#11151C"
+textColor           = "#E8EDF4"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

@@ -20,6 +20,33 @@ from pipeline.localize import localize
 
 V2_SPLITS = ("development", "validation", "held_out", "challenge")
 
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _portable_path(path: str) -> str:
+    """Render an image path for the OUTPUT manifest as a forward-slash path
+    relative to the project root.
+
+    The manifest (`outputs/reports/per_pair_results.csv`) is a submission
+    deliverable, and the submission checklist forbids hard-coded local paths.
+    `--data-root` defaults to an absolute path, so without this every row
+    shipped a per-machine absolute path such as
+    `<drive>:\\...\\data\\development/x.png` - machine-specific, mixed-separator,
+    and unreadable on any other checkout.
+
+    Only the RECORDED path is rewritten; images are still read through the
+    original absolute path, so this cannot change which files are evaluated.
+    Falls back to the input unchanged when the data root lives outside the
+    project (e.g. an evaluator pointing `--data-root` at their own directory),
+    since a relative path would be wrong in that case."""
+    try:
+        rel = os.path.relpath(os.path.abspath(path), PROJECT_ROOT)
+    except ValueError:                      # different drive on Windows
+        return path.replace("\\", "/")
+    if rel.startswith(os.pardir):           # outside the project tree
+        return path.replace("\\", "/")
+    return rel.replace(os.sep, "/")
+
 
 def _load_v2_manifest(data_root: str, split: str) -> pd.DataFrame:
     with open(os.path.join(data_root, split, "ground_truth.json")) as f:
@@ -83,8 +110,13 @@ def evaluate_split(data_root: str, split: str, *, ranking_mode: str = "classical
             raise FileNotFoundError(f"Could not read images for {row['pair_id']}")
         result = localize(ref, search, ranking_mode=ranking_mode, model=model, device=device)
         error_px = float(np.hypot(result.x - row["gt_x"], result.y - row["gt_y"]))
+        record = row.to_dict()
+        # Record portable paths; the images above were already read through the
+        # absolute ones, so this affects the manifest only.
+        record["reference_path"] = _portable_path(record["reference_path"])
+        record["search_path"] = _portable_path(record["search_path"])
         results.append({
-            **row.to_dict(),
+            **record,
             "pred_x": result.x, "pred_y": result.y, "error_px": error_px,
             "confidence": result.confidence, "ambiguity_ratio": result.ambiguity_ratio,
             "ambiguous": result.ambiguous, "runtime_s": result.runtime_s, "ranking_mode": ranking_mode,

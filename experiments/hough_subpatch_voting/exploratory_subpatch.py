@@ -1,6 +1,8 @@
 import sys, os, json
-sys.path.insert(0, "/tmp/driftsense")
-sys.path.insert(0, "/tmp/driftsense/experiments/hough_subpatch_voting")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+EXP_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, PROJECT_ROOT)
+sys.path.insert(0, EXP_DIR)
 import cv2
 import numpy as np
 import pandas as pd
@@ -8,8 +10,8 @@ from evaluation.evaluate import load_manifest
 from evaluation import benchmark, metrics
 from harness import localize_subpatch
 
-DATA_ROOT = "/tmp/driftsense/data"
-BASELINE_CSV = "/tmp/driftsense/outputs/reports/per_pair_results.csv"
+DATA_ROOT = os.path.join(PROJECT_ROOT, "data")
+BASELINE_CSV = os.path.join(PROJECT_ROOT, "outputs", "reports", "per_pair_results.csv")
 
 def run_split(split, top_k, beta):
     manifest = load_manifest(DATA_ROOT, split)
@@ -32,7 +34,7 @@ for s in splits:
     dfs.append(df)
     print(f"{s}: n={len(df)} acc@5px={(df['error_px']<=5).mean():.3f}")
 candidate_df = pd.concat(dfs, ignore_index=True)
-candidate_df.to_csv("/tmp/driftsense/experiments/hough_subpatch_voting/outputs/per_pair_results_subpatch_exploratory.csv", index=False)
+candidate_df.to_csv(os.path.join(EXP_DIR, "outputs", "per_pair_results_subpatch_exploratory.csv"), index=False)
 
 baseline_df = pd.read_csv(BASELINE_CSV)
 merged = baseline_df.sort_values("pair_id").reset_index(drop=True).merge(
@@ -43,6 +45,6 @@ print("baseline acc@5px:", (baseline_df["error_px"]<=5).mean())
 print("exploratory acc@5px:", (candidate_df["error_px"]<=5).mean())
 
 gate = benchmark.run_integration_gate(baseline_df, candidate_df, seeds_agree=True)
-with open("/tmp/driftsense/experiments/hough_subpatch_voting/outputs/exploratory_gate_result.json","w") as f:
+with open(os.path.join(EXP_DIR, "outputs", "exploratory_gate_result.json"),"w") as f:
     json.dump(gate, f, indent=2)
 print(json.dumps({"passed": gate["passed"], "criteria": gate["criteria"]}, indent=2))

@@ -1,0 +1,23 @@
+{
+  "successful": {
+    "pair_id": "val_linewidth_bias_004",
+    "split": "validation",
+    "structural_family": "val_linewidth_bias",
+    "error_px": 0.008423212381503759,
+    "rationale": "Structural family `val_linewidth_bias` (split: `validation`); this crop crosses a mat boundary and crosses a strip. Predicted error: 0.01px."
+  },
+  "difficult": {
+    "pair_id": "dev_single_mat_006",
+    "split": "development",
+    "structural_family": "dev_single_mat",
+    "error_px": 11.89116722616581,
+    "rationale": "Structural family `dev_single_mat` (split: `development`); this crop stays deep inside one mat (no boundary). Predicted error: 11.89px."
+  },
+  "catastrophic": {
+    "pair_id": "ho_rotation_drift_007",
+    "split": "held_out",
+    "structural_family": "ho_rotation_drift",
+    "error_px": 850.5481712272139,
+    "rationale": "Structural family `ho_rotation_drift` (split: `held_out`); this crop stays deep inside one mat (no boundary). Predicted error: 850.55px."
+  }
+}

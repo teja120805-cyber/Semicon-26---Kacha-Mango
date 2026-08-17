@@ -1,7 +1,7 @@
 # DriftSense V2 — project brief
 
 Navigation-error recovery for semiconductor wafer inspection. Applied Materials problem statement,
-SEMICON India Hackathon 2026, team Kaccha Mango. Working folder: `D:\Hackathons\Semicon\Drift Sense`.
+SEMICON India Hackathon 2026, team Kaccha Mango. Repository root is the checkout directory; no absolute paths are assumed anywhere in the code.
 
 ## The task
 
@@ -14,7 +14,7 @@ gamma, speckle, charging). A prediction is correct if it lands within **5px**.
 ## Current state
 
 **77.6% accuracy @5px, pooled over 156 pairs.** Classical multi-scale × multi-rotation ZNCC template
-matching; no deep learning in the production path. Runtime ~6.3 s/pair. Splits: validation 92.5%,
+matching; no deep learning in the production path. Runtime 3.72 s/pair. Splits: validation 92.5%,
 cross_generator 80.0%, challenge 71.9%, development 70.8%, held_out 70.0%.
 
 Layout: `generator/` (synthetic DRAM dataset), `pipeline/` (production localizer), `model/`
@@ -43,16 +43,19 @@ with its own REPORT.md), `reports/` (design and analysis docs).
 - **Every remaining failure is a near-tie.** The true location scores within 0.05 ZNCC of the chosen
   one, max ratio 1.048× — not the "4× gap" an earlier report claimed (that claim is falsified and
   corrected in place).
-- **Crop uniqueness governs accuracy, not periodicity.** `uniqueness_score = 0` → 43.8% (n=48);
-  above 0 → 88.0% (n=108). Holding uniqueness fixed, periodicity moves accuracy by ~0.4pp.
-  Boundary-crossing crops score 89.8% vs 54.4%. Periodicity is a **confound**.
+- **Crop uniqueness governs accuracy, not periodicity.** `uniqueness_score = 0` → 50.0% (n=48);
+  above 0 → 89.8% (n=108). Holding uniqueness fixed, periodicity moves accuracy by ~0.4pp.
+  Crops crossing a mat or strip boundary score 92.0% (n=88) vs 58.8% (n=68) for those crossing
+  neither. Periodicity is a **confound**.
 - **The task is well-posed.** 154/156 crops have a unique origin at 0.95 content identity; zero of
-  the 40 failures picked a location matching ground truth above 0.95.
+  the failures picked a location matching ground truth above 0.95 (identity check run on the
+  superseded 40-failure set; production now has 35 failures).
 - **Template fidelity is the bottleneck.** The two Search locations differ at ZNCC 0.732 while the
   template separates them by 0.0098 — the discriminating information is destroyed in template
   construction, upstream of ranking.
-- Failure decomposition: 45% candidate generation (true location never proposed), 22.5% tie-break,
-  32.5% scoring.
+- Failure decomposition, measured across all **35** failures: **37% discovery** (the true location
+  is not within 5px of any pooled candidate, so no re-scoring or re-ranking stage can reach it) /
+  **63% selection** (the true location *is* in the pool but loses to a near-tie).
 
 ## Closed by evidence — do not retry as-is
 
@@ -71,9 +74,12 @@ with its own REPORT.md), `reports/` (design and analysis docs).
   blind to over-smoothing damage. This affects past conclusions, not just future ones.
 - `validation` is only 40 pairs at 92.5% — a ceiling that has blocked two near-miss results from
   passing the gate on that criterion alone.
-- `AMBIGUITY_THRESHOLD = 0.92` is miscalibrated: fires on 128/156 pairs at 31% precision, while a
-  pool-internal score-gap statistic reaches 95% failure recall at 49% coverage.
-- Three production changes are in as **documented gate exceptions** — "in production" does not mean
+- `AMBIGUITY_THRESHOLD` was miscalibrated at `0.92` and has been recalibrated to **`0.990`**
+  (gate exception 4). It now fires on 55/156 pairs (35.3%) at 54.5% precision and 85.7% failure
+  recall — a usable triage flag rather than one that fires on nearly everything. A pool-internal
+  score-gap statistic still reaches 95% failure recall at 49% coverage and remains the stronger
+  basis for selective escalation.
+- Four production changes are in as **documented gate exceptions** — "in production" does not mean
   "passed all 7 criteria". See `reports/GATE_EXCEPTIONS.md`.
 
 ## Next planned work

@@ -50,10 +50,15 @@ rotation/scale drift was the presumptive dominant failure mode — the evidence 
 periodicity and hypothesis-grid alignment as at-least-comparable, more mechanistically-understood
 causes, with boundary presence dominating all of them. Applying the same instrumented diagnostics
 directly to the frozen benchmark itself (not just the synthetic sweeps —
-`scripts/decompose_baseline_failures.py`) confirms this on real data: of 156 pairs, 31 fail at
-candidate generation (the true location is never proposed) vs. 11 at ranking and 7 at genuine
-ambiguity — candidate-generation failure is the single largest category, concentrated specifically
-where no boundary is present (41.2% failure rate without one, 3.4% with one). Visual analysis of the
+`scripts/decompose_baseline_failures.py`) confirms this on real data: across the current **35**
+failures, **37% are discovery failures** (the true location is not within 5px of any pooled
+candidate, so no re-scoring or re-ranking stage can reach them) and the remaining **63% are
+selection failures** (the true location *is* in the pool but loses a near-tie). Failure
+concentrates specifically where no boundary is present — 41.2% failure rate without one, **7.95%**
+with one. *(Corrected 2026-08-17: this passage previously read "31 candidate generation / 11
+ranking / 7 genuine ambiguity", which sums to 49 failures and belongs to the superseded 74.36% run;
+and it quoted 3.4% as the boundary failure rate, which is in fact the boundary **catastrophic**
+>50px rate, not failure@5px. The 41.2% non-boundary figure is correct.)* Visual analysis of the
 10 worst failures (`outputs/visualizations/catastrophic_failures/`) sharpens this further: **9 of 10
 have high periodicity, and 7 of 10 have zero rotation/scale drift at all** — the catastrophic tail
 specifically is a periodicity story, not primarily a rotation/scale one, because a periodicity
@@ -110,10 +115,12 @@ docs moved into `reports/`. Rejected-experiment checkpoints moved out of `model/
 (production) into `experiments/embedding_reranker_v1/checkpoints/`, with all path references and
 script defaults updated to match. `experiments/*/data/` and `experiments/*/outputs/` gitignored
 alongside the existing `data/`/`outputs/` conventions, so none of the ~3,100 forensics pairs or
-experiment result CSVs bloat the repository. Test suite: 10 tests (`generator/test_gt_safety.py`,
-`generator/test_dataset_validation.py`), all passing, covering GT correctness/safety, reproducibility,
-metadata completeness, preset differentiation, finite-coordinate sanity, and — found and fixed along
-the way — two latent edge-clamping bugs in the validation tests themselves (not the generator).
+experiment result CSVs bloat the repository. Test suite: 24 tests (`generator/test_gt_safety.py`,
+10; `pipeline/test_ranking.py`, 14), all passing, covering GT correctness/safety, reproducibility,
+metadata completeness, preset differentiation, finite-coordinate sanity and tie-break behaviour.
+`generator/test_dataset_validation.py` defines no `test_*` functions — it exposes
+`validate_split`/`validate_dataset` helpers invoked as a CLI step — but two latent edge-clamping
+bugs were found and fixed in it along the way (in those helpers, not the generator).
 
 ## Dataset sufficiency (`reports/DATASET_AUDIT.md` section 5)
 

@@ -169,7 +169,7 @@ gitignored). `git add -n` confirms only source code and reports would be staged 
 `experiments/` directories — none of the ~3,100 generated forensics pairs or experiment result
 CSVs/JSONs.
 
-**Phase 12 — Validation.** Full test suite (10 tests) passing after every change in this pass,
+**Phase 12 — Validation.** Full test suite (24 tests) passing after every change in this pass,
 including two tests added along the way (preset differentiation, finite-ground-truth sanity). Full
 `generate_dataset.py → test_dataset_validation.py → evaluate_model.py → run_demo.py` workflow
 exercised end-to-end during this pass (not from a separately-cleaned directory, but using the actual

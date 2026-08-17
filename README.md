@@ -40,8 +40,11 @@ ZNCC matching, no deep learning in the production path.
 
 | Metric | Value |
 |---|---:|
+| Accuracy @0.5px (sub-pixel) | 66.7% |
 | Accuracy @1px | 72.4% |
 | Accuracy @2px | 77.6% |
+| Accuracy @3px | 77.6% |
+| Accuracy @4px | 77.6% |
 | **Accuracy @5px (pooled)** | **77.6%** |
 | Median error | 0.32 px |
 | Mean error | 47.7 px |
@@ -59,9 +62,26 @@ ZNCC matching, no deep learning in the production path.
 | `development` | 24 | 70.8% |
 | `held_out` | 40 | 70.0% |
 
-Error is strongly bimodal: the median prediction lands within a third of a pixel, while the
-remaining failures are wrong-location misses rather than imprecise ones. Improving accuracy is
-therefore a question of candidate disambiguation, not subpixel precision.
+**Read the four threshold rows together — they are the bimodality result.** Accuracy is identical
+at 2, 3, 4 and 5 px (121/156 in every case): not one pair in the benchmark lands between 2 px and
+5 px of truth. Loosening the tolerance from 2 px to 5 px buys nothing, and tightening it to 1 px
+costs only 8 pairs. A prediction is either essentially exact or it has locked onto the wrong
+lattice cell. Improving accuracy is therefore a question of candidate disambiguation, not of
+sub-pixel precision.
+
+**Sub-pixel performance: 66.7% of all pairs land inside half a pixel** (104/156), and the median
+error is 0.32 px. `pipeline/refinement.py` fits a parabola to the correlation peak, so the returned
+coordinates are continuous rather than quantised to the search grid.
+
+**Runtime, hardware and timing method.** Runtime is measured with `time.perf_counter()` wrapped
+around the `localize()` call only (`pipeline/localize.py`). It covers candidate generation,
+scoring, ranking and sub-pixel refinement, and **excludes** image file I/O and dataset generation.
+Execution is single-process CPU — no GPU is used anywhere in the production path, and no code in
+`pipeline/` spawns threads or subprocesses. The 3.72 s/pair above was measured on the development
+workstation (Windows, x64); the identical benchmark takes 6.08 s/pair on a 2-core Linux container,
+so treat the ratio rather than the absolute as portable. Exact host CPU, OS build, Python and
+library versions for any machine are printed by `python scripts/report_environment.py`, and by the
+Streamlit app's **System Information** screen.
 
 **Selective prediction.** Every result carries an `ambiguous` flag derived from the candidate
 pool's own score distribution. Withholding flagged results trades coverage for reliability:
@@ -312,9 +332,10 @@ classical. Full analysis: `reports/V2_MODEL_EVALUATION_REPORT.md`.
 ## Known Limitations
 
 - **Crop uniqueness, not periodicity, governs accuracy.** Reference crops containing no
-  distinguishing macro structure (`uniqueness_score = 0`) score 43.8%, against 88.0% for all
-  others; crops crossing a mat or strip boundary score 89.8% against 54.4% for those crossing
-  neither. Periodicity correlates with failure because non-unique crops tend to be periodic — with
+  distinguishing macro structure (`uniqueness_score = 0`) score 50.0% (24/48), against 89.8%
+  (97/108) for all others; crops crossing a mat or strip boundary score 92.0% (81/88) against
+  58.8% (40/68) for those crossing neither. Periodicity correlates with failure because
+  non-unique crops tend to be periodic — with
   uniqueness held fixed it moves accuracy by well under one point. Analysis:
   `experiments/crop_uniqueness_ceiling/REPORT.md` and `reports/ACCURACY_FORENSICS.md`.
 - Remaining failures are near-ties rather than blowouts: the correct location is scored within 0.05
@@ -372,7 +393,8 @@ Two consolidated experiment campaigns sit alongside these, in `experiments/`:
 | Campaign | What it covers |
 |---|---|
 | `ACCURACY_90_CAMPAIGN.md` | Nine independent attempts at a 90% target, all rejected, and the shared failure mode |
-| `REACHABILITY_CAMPAIGN.md` | Six further experiments (weighted ZNCC, wider pool, PSR, anisotropic PSF, spectral/spatial filtering, aperiodic anchoring) — five rejected, one integrated; establishes the reachability ceiling that bounds the whole re-scoring class |
+| `REACHABILITY_CAMPAIGN.md` | Eight further experiments (weighted ZNCC, wider pool, PSR, anisotropic PSF, spectral/spatial filtering, aperiodic anchoring, NMS spatial diversity, DDIS) — seven rejected, one calibration change integrated; establishes the reachability ceiling that bounds the whole re-scoring class |
+| `BATCH_2026-08-17_REPORT.md` | Final batch: alternative correlation scores (OTSDF/MACE, phase), axis decomposition, low-frequency 1-D cues, cross-hypothesis aggregation and gated escalation — all rejected or interim; closes the consensus/voting family with a mechanism |
 
 ---
 

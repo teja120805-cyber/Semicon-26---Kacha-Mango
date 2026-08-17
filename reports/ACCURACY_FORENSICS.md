@@ -4,15 +4,19 @@
 > Finding 1 names periodicity the strongest single factor. That conclusion is correct *within this
 > report's controlled sweep* (which holds boundary absent and varies pitch), but it is not what
 > dominates on the real benchmark. Measured across all 156 pairs, accuracy is governed by whether
-> the Reference crop is **unique** at all: `uniqueness_score = 0` scores 43.8% (n=48) and
-> everything above 0 scores 88.0% (n=108). Holding uniqueness fixed, high vs. low periodicity moves
+> the Reference crop is **unique** at all: `uniqueness_score = 0` scores 50.0% (n=48) and
+> everything above 0 scores 89.8% (n=108). Holding uniqueness fixed, high vs. low periodicity moves
 > accuracy by **0.4pp** — nothing. Periodicity correlates with failure because non-unique crops
 > tend to be periodic, not because periodicity is the operative variable.
 >
 > This report's Finding 3 (boundary presence is strongly protective) is the same effect seen from
-> the other side, and it holds up: crops crossing a mat or strip boundary score 89.8% vs 54.4% for
-> those crossing neither. Read Finding 3 as the primary result and Finding 1 as a secondary effect
-> *within* the non-unique subgroup.
+> the other side, and it holds up: crops crossing a mat or strip boundary score 92.0% (n=88) vs
+> 58.8% (n=68) for those crossing neither. Read Finding 3 as the primary result and Finding 1 as a
+> secondary effect *within* the non-unique subgroup.
+>
+> **Figures in this note recomputed 2026-08-17** against the current 77.6%@5px production run. The
+> earlier values (43.8% / 88.0% for uniqueness, 89.8% vs 54.4% for boundary) were measured on the
+> superseded 74.36% run; the conclusions are unchanged, only the magnitudes.
 >
 > The practical consequence: nine experiments in `experiments/ACCURACY_90_CAMPAIGN.md` targeted
 > periodicity directly and all nine were no-ops. The change that did work

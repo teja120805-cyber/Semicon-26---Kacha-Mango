@@ -126,7 +126,8 @@ four FFTs instead of two. Two ways to set the weights, both attacking confusers 
 own gap statistic is a crude version of, and it is better founded. We already showed the gap
 statistic separates correct from wrong pairs by ~7x in the median and drives the integrated dual-arm
 selection; PSR should do the same job better, and would also be the principled replacement for
-`AMBIGUITY_THRESHOLD = 0.92`, which currently fires on 128/156 pairs at 31% precision. Cheap, and
+`AMBIGUITY_THRESHOLD`, now recalibrated to `0.990` (it fires on 55/156 pairs, 35.3%, at 54.5%
+precision; at the superseded `0.92` it fired on 128/156 at 31% precision). Cheap, and
 worth doing regardless of which scoring change wins.
 
 ### P5 — DDIS as a re-ranker over the top-K candidates

@@ -18,7 +18,7 @@ import cv2
 import numpy as np
 import pandas as pd
 
-PROJECT_ROOT = "/tmp/driftsense"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, PROJECT_ROOT)
 
 from evaluation.evaluate import load_manifest  # noqa: E402

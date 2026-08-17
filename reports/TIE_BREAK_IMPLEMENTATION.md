@@ -31,9 +31,10 @@ No other file changed. `rank_classical`, `rank_with_model`, `candidate_generatio
 ## 5. Tie/equivalence definition used
 
 **First attempt (rejected after empirical testing):** reuse the pipeline's existing
-`localize.AMBIGUITY_THRESHOLD = 0.92` (the second-best/best ZNCC ratio already used to flag a
-result "ambiguous" for reporting), generalized to "every leading candidate within that ratio of
-the best." This is the natural reading of "use existing pipeline logic, don't invent a tolerance" -
+`localize.AMBIGUITY_THRESHOLD`, which was `0.92` at the time (the second-best/best ZNCC ratio
+already used to flag a result "ambiguous" for reporting), generalized to "every leading candidate
+within that ratio of the best." This is the natural reading of "use existing pipeline logic, don't
+invent a tolerance" -
 but running the full benchmark with it collapsed pooled accuracy@5px from 71.2% to 33.3% (see
 section 7). Diagnosing this: on the `development` split, this definition classified 21/24 pairs as
 "tied," each spanning multiple candidates with gradually decaying but genuinely distinct scores
@@ -42,6 +43,12 @@ different wrong-location candidates, not a real near-tie). `AMBIGUITY_THRESHOLD`
 flag "is the top match worth reporting as uncertain," which is a fundamentally looser question than
 "are these two candidates interchangeable as the final answer" - reusing it for the latter was the
 wrong interpretation of "existing pipeline logic," even though it reused an existing constant.
+
+> **Note (2026-08-17):** `AMBIGUITY_THRESHOLD` has since been recalibrated `0.92` → **`0.990`**
+> (gate exception 4). At `0.990` it fires on 55/156 pairs (35.3%) at 54.5% precision, against
+> 128/156 at 31% precision under `0.92`. The rejection above stands on its own terms — the
+> constant answers a looser question than tie-equivalence at any value — but the `0.92` figures
+> quoted in this section describe the constant as it was, not as it is.
 
 **Final definition:** two scores are tied only if they are numerically equal within
 `TIE_SCORE_EPSILON = 1e-6` (float32 ZNCC computation noise, not a tolerance with any business
@@ -53,7 +60,7 @@ expectation of "little or no effect" for a spec-compliance fix, not an accuracy 
 
 ## 6. Tests
 
-`pipeline/test_ranking.py`, 9 tests, all passing:
+`pipeline/test_ranking.py`, 14 tests, all passing:
 
 - Unique winner kept regardless of centre distance
 - Exact tie -> closer-to-centre candidate wins
@@ -64,8 +71,17 @@ expectation of "little or no effect" for a spec-compliance fix, not an accuracy 
 - No-op on 0/1 candidates
 - Regression guard: `rank_classical` itself is unchanged (pure arg-max)
 - Regression guard: merely-similar (not equal) scores are never treated as tied
+- Multiway tier fires with three tied candidates and a small spread
+- Multiway tier does not fire with only two candidates
+- Multiway tier does not fire when the spread is too large
+- Multiway tier does not fire beyond its own epsilon
+- Tight tier takes precedence and is never weakened by the multiway parameters
 
-Full suite: `pytest -q` -> 19 passed (10 pre-existing + 9 new), 0 failed.
+The last five cover the structurally-gated multiway tier, added after this section was first
+written (the count then was 9).
+
+Full suite: `pytest -q` -> 24 passed (10 in `generator/test_gt_safety.py` + 14 in
+`pipeline/test_ranking.py`), 0 failed.
 
 ## 7. Before/after benchmark
 

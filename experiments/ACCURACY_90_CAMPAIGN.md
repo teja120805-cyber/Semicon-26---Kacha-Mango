@@ -1,6 +1,15 @@
 # Accuracy-improvement campaign — pooled accuracy@5px 74.36% toward ~90%
 
-**Status: goal not reached. Verified production baseline (74.36%@5px, n=156) is unchanged.**
+> **Correction (2026-08-17) — the baseline this campaign was measured against has since moved.**
+> 74.36%@5px (n=156) was the verified production baseline *at the time of this campaign* and is the
+> number every result below is compared against. Production is now **77.6%@5px (n=156)**, raised
+> after this campaign by PSF-matched dual-arm candidate generation
+> (`reports/GATE_EXCEPTIONS.md` exception 3, `experiments/psf_gated_selection/REPORT.md`). Every
+> rejection below stands — none of the nine ideas was integrated — but read "the production
+> baseline" throughout as the historical 74.36%, not the current figure.
+
+**Status: goal not reached. This campaign left the then-current production baseline
+(74.36%@5px, n=156) unchanged.**
 Nine independent, evidence-grounded ideas were designed, implemented, and rigorously
 benchmarked in sandbox-isolated `experiments/` folders, per standing instructions: never modify
 `pipeline/`, `generator/`, or `model/`; keep every idea in its own separate, fully-documented
@@ -14,7 +23,7 @@ the full technical detail, all per-pair data, and reproduction instructions.
 
 - **Sandbox data was verified byte-for-byte against the user's real production machine** before
   any experiment ran: `opencv-python-headless==5.0.0.93` pinned, all 322 data files staged from
-  the user's `D:\Hackathons\Semicon\Drift Sense\data\`, baseline re-run in sandbox and confirmed
+  the project's `data/` directory, baseline re-run in sandbox and confirmed
   to match the user's real `outputs/reports/per_pair_results.csv` to full float precision
   (`accuracy_at_5px: 0.7435897435897436`, n=156) - this is the number every experiment below is
   compared against.
@@ -102,7 +111,9 @@ lists what those reasons might be, none confirmed).
 
 ## Honest assessment of the ~90% target
 
-The production pipeline remains at the verified 74.36%@5px (n=156) baseline. The two structural
+No experiment in this campaign moved the production pipeline off the verified 74.36%@5px (n=156)
+baseline it started from (production has since reached 77.6% by other means — see the correction at
+the top of this document). The two structural
 fixes that DID work and are already integrated (A2 `scale_range_v1`, widening the scale
 hypothesis grid to the literal 9:1-11:1 span, and A6 `multiway_tiebreak_v1`, the multiway-gated
 center tie-break) were both from before this campaign and addressed narrower, more mechanical

@@ -25,13 +25,19 @@ what was tried in response to it.
 > default hypothesis grid was widened accordingly (5x5 -> 9x9, same span) — the sections below are
 > kept as the historical record of the decision process, not the current state.
 
+> **Correction (2026-08-17):** section 1 previously decomposed failures as "31/156 candidate
+> generation vs. 11 ranking vs. 7 genuine ambiguity" — 49 failures in total, which is the superseded
+> 74.36% run, not the current one. It also quoted 3.4% as the boundary failure rate; that figure is
+> the boundary **catastrophic** (>50px) rate. Both are restated below against the current 35
+> failures. The 41.2% non-boundary failure rate was and remains correct.
+
 ## 1. What is currently limiting accuracy?
 
-Per `reports/ACCURACY_FORENSICS.md`, confirmed again directly on the frozen benchmark this round:
-candidate-generation failure (the true location never becomes a competitive classical match) is the
-single largest failure category — 31/156 pairs, vs. 11 ranking failures and 7 genuine-ambiguity
-cases. It concentrates specifically where no structural boundary is present (41.2% failure rate
-without one vs. 3.4% with one), and the worst (catastrophic) failures are disproportionately
+Per `reports/ACCURACY_FORENSICS.md`, confirmed again directly on the frozen benchmark: of the
+current **35** failures, **37%** are discovery failures (the true location is not within 5px of any
+pooled candidate) and **63%** are selection failures (it is in the pool but loses a near-tie).
+Failure concentrates specifically where no structural boundary is present (41.2% failure rate
+without one vs. **7.95%** with one), and the worst (catastrophic) failures are disproportionately
 high-periodicity, zero-rotation/scale cases. Rotation/scale hypothesis-grid misalignment is a real,
 separate, well-evidenced secondary mechanism.
 

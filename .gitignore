@@ -23,12 +23,30 @@ data/cross_generator/*
 model/checkpoints/*
 !model/checkpoints/.gitkeep
 
-# Generated benchmark artifacts (reproducible via evaluation/*.py)
+# Generated benchmark artifacts (reproducible via evaluation/*.py).
+#
+# The problem statement lists "Results" (metrics, plots, runtime, failure case)
+# and a "CSV/manifest" among the REQUIRED submission deliverables, so the eight
+# benchmark figures, the metric JSONs and the per-pair manifest ARE tracked: an
+# evaluator who clones this repository has to be able to read the results
+# without first regenerating a 156-pair dataset. They stay reproducible - see
+# README "Reproducibility" - but reproducible is not the same as present.
+#
+# Everything else under outputs/ is intermediate and stays ignored: the learned
+# re-ranker's parallel result set, the pre-PSF baseline snapshot, and any
+# scratch verification directories.
 outputs/plots/*
-outputs/reports/*
-outputs/visualizations/*
 !outputs/plots/.gitkeep
+!outputs/plots/*.png
+
+outputs/reports/*
 !outputs/reports/.gitkeep
+!outputs/reports/baseline_metrics.json
+!outputs/reports/failure_analysis_cases.json
+!outputs/reports/per_pair_results.csv
+!outputs/reports/per_pair_results.json
+
+outputs/visualizations/*
 !outputs/visualizations/.gitkeep
 
 # Experiment outputs (each experiment's own generated artifacts)

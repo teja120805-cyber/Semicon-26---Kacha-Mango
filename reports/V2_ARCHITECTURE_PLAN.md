@@ -5,7 +5,7 @@ generator, pipeline, and evaluation methodology, and the rationale behind each m
 generator design was informed by a read-only study of the Applied Materials/Hugging Face reference
 generator (`src/`, `baseline_solution/` — the hackathon's official starter resource); its code is
 never imported, copied, or executed by this project, only studied for design ideas and, separately,
-used as a frozen external evaluation surface via its already-generated output images (section 8).
+used as a frozen external evaluation surface via its already-generated output images (section 9).
 
 ---
 
