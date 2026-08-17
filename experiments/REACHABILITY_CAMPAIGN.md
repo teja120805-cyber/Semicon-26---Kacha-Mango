@@ -1,36 +1,65 @@
 # Campaign — the reachability ceiling (2026-08-16)
 
-Consolidated record of six independent experiments run in one session, in the same spirit as
+Consolidated record of eight independent experiments, in the same spirit as
 `experiments/ACCURACY_90_CAMPAIGN.md`. **Production is unchanged at 77.6%@5px.** `pipeline/`,
 `generator/` and `model/` were never modified.
 
-**Headline: no accuracy improvement was found. One validated calibration improvement was.** The
-campaign's real output is a measurement that reframes what is worth trying next.
+**Headline: no accuracy improvement was found. One validated calibration improvement was.** A
+second output — a measurement meant to reframe what is worth trying next — was **overstated and has
+since been corrected**; see the correction immediately below, which supersedes it.
 
-## The unifying finding
+## CORRECTION (2026-08-17) — this campaign's headline number was wrong
+
+> The original claim below — **"74% of failures are unreachable"** — was measured on 19 failures
+> across two tuning surfaces. It was re-measured on the **frozen 156-pair benchmark**, which
+> carries **35 failures**, nearly twice the sample and the authoritative data:
+> `experiments/reachability_verification/`.
+>
+> | | claimed | measured on frozen benchmark |
+> |---|---:|---:|
+> | failures unreachable | 74% | **37.1%** (13 of 35) |
+> | failures reachable | 26% | **62.9%** (22 of 35) |
+> | pool recall | 0.750 | **0.917** |
+> | selector efficiency | ~0.93 | **0.846** |
+>
+> **The tuning surfaces were unrepresentative.** `development` alone gives 57% (4/7 — reproduced
+> exactly) and the deliberately-degraded 40-pair surface gives 83% (10/12); the degraded surface
+> over-weights families where candidate generation fails, and averaging the two produced a figure
+> nearly double the truth. The frozen number is in fact close to the project's **pre-existing 45%
+> candidate-generation figure** from `experiments/oracle_ceiling_diagnostic/` — that measurement was
+> right, and this campaign's was the outlier. The claim was published in the project README and has
+> been corrected there.
+>
+> **What this changes.** The rejections below all stand — they are empirical and unaffected. What
+> does not stand is the *explanation* offered for them. "74% of failures are out of scope" was
+> wrong: in **63%** of failures the true location IS in the pool, at median rank 3, losing by a
+> median of only 0.029 ZNCC. So the recommendation "stop building re-scorers because most failures
+> are unreachable" was overstated. The honest position is narrower and less comfortable: the
+> near-tie is real and reachable, and **twelve independent attempts to break it have failed** —
+> nine in `ACCURACY_90_CAMPAIGN.md` plus three here. That is strong evidence the class is hard, not
+> evidence that it is out of scope.
+
+## The original finding (as measured on tuning surfaces — see correction above)
 
 > **74% of remaining failures are unreachable.** Ground truth is not within 5px of *any* candidate
 > in the pool, so no re-scoring, re-ranking or tie-breaking stage — however good — can fix them.
 
 Measured on 19 failures across two surfaces (`development` 4/7 unreachable, a fresh degraded
-40-pair surface 10/12). This is sharper than the project's existing 45% candidate-generation figure
-from `experiments/oracle_ceiling_diagnostic/`; both can be true, since they were measured on
-different surfaces, but the direction is consistent and stronger here.
+40-pair surface 10/12).
 
-The corollary that makes it actionable:
+The corollary, which **does** survive the correction:
 
-> **Recall is not the binding constraint either.** Widening candidate generation lifts pool recall
-> from 0.750 to 0.900, and converts **none** of it into accuracy — across 144 configurations,
-> **zero** rescues, with breaks rising monotonically as recall rises.
+> **Recall is not the binding constraint.** Widening candidate generation lifts pool recall and
+> converts **none** of it into accuracy — across 144 configurations, **zero** rescues, with breaks
+> rising monotonically as recall rises. On the frozen benchmark recall is already 0.917, so there
+> was little room for widening to help in the first place.
 
-Production accuracy decomposes as `recall × selector efficiency` = 0.750 × 0.93 on the degraded
-surface. **The selector is already ~93% efficient on the pool it is given.** Widening the pool to
-recall 0.900 drops selector efficiency to 0.78 for no net gain. So the lever is neither "score the
-candidates better" nor "propose more candidates" — it is **make the true location score highly in
-the first place**, i.e. template fidelity, which is exactly item 1 in `PROJECT_STATUS.md`'s
-next-steps list.
+Production accuracy decomposes as `recall × selector efficiency`. On the frozen benchmark that is
+**0.917 × 0.846** — the degraded-surface figures (0.750 × 0.93) quoted in the original version were
+not representative. With recall already at 0.917, "propose more candidates" is clearly not the
+lever; the remaining headroom sits in **selection among near-ties**.
 
-## The six experiments
+## The eight experiments
 
 | # | experiment | verdict | evidence |
 |---|---|---|---|
@@ -40,6 +69,11 @@ next-steps list.
 | 4 | `anisotropic_psf/` — horizontal-jitter-matched blur | **NOT SUPPORTED** | +8.3pp on dev, exactly 0 effect on 40 independent pairs |
 | 5 | `template_fidelity_ablation/` — spatial high/band-pass | **REJECT** | monotone harm: −2, −4, −6 net at σ = 8, 16, 32 |
 | 6 | `aperiodic_anchor/` — sub-model prior to *remove* decoys | **REJECT** | 0 rescues at every radius; −6 to −7 net |
+| 7 | `nms_spatial_diversity/` — larger NMS radius for pool diversity | **REJECT** | recall flat (0.8333) across a 16× radius range |
+| 8 | `ddis_diversity/` — P5, Deformable Diversity Similarity | **REJECT** | prefers truth on 11/22 reachable failures — exactly chance |
+
+Plus `reachability_verification/`, a diagnostic that corrected this campaign's own headline number
+(see the correction above).
 
 ### 1. P3 — discriminability-weighted ZNCC → REJECT
 
@@ -175,6 +209,35 @@ both go wrong together and the prior then confidently deletes the correct candid
 is only useful as a filter if its errors are *independent* of what it filters. Any future anchor or
 sub-model proposal needs a genuinely different measurement channel, not a different sub-region.
 
+### 7. Larger NMS radius → REJECT
+
+Both prior pool experiments moved the suppression radius **down** (4px); nobody had tried up. The
+premise checks out — correlation-surface pitch is **median 14px against an 8px radius**, exceeding
+it on 21/24 pairs — but recall at equal k is **identical (0.8333) from radius 8 to 128**. The pool
+is already spatially diverse (median nearest-neighbour distance 16.4px at r=8) because diversity
+comes from the 81 hypotheses, not from within-hypothesis peak-picking, and `deduplicate_by_location`
+already collapses within 10px across the whole pool.
+
+### 8. P5, Deformable Diversity Similarity → REJECT
+
+The last untested proposal in `RESEARCH_SURVEY_SCORING.md`, and categorically different from the
+twelve attempts before it: it measures how many template patches find **distinct** nearest
+neighbours, discarding match quality entirely, so it cannot degenerate into another ZNCC variant.
+At a periodic decoy the correspondences collapse onto repeating positions — that collapse is the
+signature, measured rather than inferred.
+
+**It sits at chance: 11 of 22 reachable failures, median margin +0.0009.** Bar was >70%, set before
+running.
+
+Notable for method as much as result: because `reachability_verification/` had established a precise
+target (separate a 0.029 ZNCC gap on 22 specific pairs), this was closed by a **3-minute diagnostic
+with no harness, no sweep and no end-to-end run**. Several earlier experiments in this project could
+have been closed the same way.
+
+**The survey is now fully explored.** P1, P2, P3, P4 and P5 are all tested and rejected; only P6
+(frozen pretrained features) remains unattempted, and the survey itself scopes it as a coarse
+re-ranker whose 16px token resolution cannot reach a 5px tolerance.
+
 ## Methodology note — a known defect, addressed
 
 `PROJECT_STATUS.md` records that **`development` contains no degraded-acquisition family**, so every
@@ -210,9 +273,14 @@ selected-looking result, which is why it was independently checked and reported 
 
 ## What this implies for the next attempt
 
-1. **Stop building re-scorers.** Three now (nine in `ACCURACY_90_CAMPAIGN.md`, plus P3, plus the
-   wide-pool combination). The reachability measurement explains why the whole class fails: 74% of
-   failures are out of its scope, and the selector is already 93% efficient inside its scope.
+1. **Re-scoring is hard, not out of scope — a corrected recommendation.** The original version of
+   this list said "stop building re-scorers" on the grounds that 74% of failures were unreachable.
+   That was wrong (see the correction at the top): **63% of failures ARE reachable**, with the true
+   location at median rank 3 and a median deficit of only 0.029 ZNCC. The honest statement is that
+   twelve independent attempts — nine in `ACCURACY_90_CAMPAIGN.md`, three here — have all failed to
+   break that near-tie. A thirteenth is not obviously futile, but it needs a genuinely different
+   discriminative signal rather than another reweighting of ZNCC, and it should be required to show
+   it can separate a 0.029 gap before any integration work begins.
 2. **Stop reshaping the spectrum.** Closed by three independent mechanisms (experiment 5). Require
    any new proposal in this family to show it preserves low-frequency boundary content.
 3. **Template fidelity remains the only lever the evidence supports**, but every obvious route is
@@ -236,3 +304,6 @@ selected-looking result, which is why it was independently checked and reported 
 - `experiments/anisotropic_psf/REPORT.md`
 - `experiments/template_fidelity_ablation/REPORT.md`
 - `experiments/aperiodic_anchor/REPORT.md`
+- `experiments/nms_spatial_diversity/REPORT.md`
+- `experiments/ddis_diversity/REPORT.md`
+- `experiments/reachability_verification/REPORT.md`

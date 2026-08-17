@@ -320,14 +320,15 @@ classical. Full analysis: `reports/V2_MODEL_EVALUATION_REPORT.md`.
 - Remaining failures are near-ties rather than blowouts: the correct location is scored within 0.05
   ZNCC of the chosen one in every failing pair measured. Correlation fidelity at the true location,
   not candidate ranking, is the active constraint.
-- **In roughly three-quarters of failures the true location is never proposed at all** — it is not
-  within 5px of any candidate in the pool, so no re-scoring, re-ranking or tie-breaking stage can
-  reach them (74% of 19 failures, measured across two surfaces). Widening candidate generation
-  raises pool recall from 0.750 to 0.900 and converts none of it into accuracy across 144 tested
-  configurations. Accuracy decomposes as `recall × selector efficiency`, and the selector is
-  already ~93% efficient on the pool it is given, so neither better scoring nor more candidates is
-  the active lever. Six experiments testing that space are consolidated in
-  `experiments/REACHABILITY_CAMPAIGN.md`; all were rejected.
+- **Failures split roughly one-third discovery, two-thirds selection.** Measured across all 35
+  failures on the frozen benchmark: in **37%** the true location is not within 5px of any pooled
+  candidate, so no re-scoring or re-ranking stage can reach them; in the remaining **63%** the true
+  location *is* in the pool — at median rank 3, losing to the winner by a median of only 0.029
+  ZNCC. Pool recall is 0.917 and selector efficiency is 0.846, so the binding constraint is
+  choosing correctly among near-ties rather than discovering the location. That said, twelve
+  independent attempts at exactly that selection problem have all been rejected — nine in
+  `experiments/ACCURACY_90_CAMPAIGN.md`, three in `experiments/REACHABILITY_CAMPAIGN.md` — so the
+  near-tie is real but nothing tried so far can break it.
 - The `ambiguous` flag is a reporting output only. Nothing in the pipeline reads it to make a
   decision, and it captures 85.7% of failures rather than all of them — a triage aid, not a
   correctness guarantee. Its precision depends on the failure base rate of the population measured,

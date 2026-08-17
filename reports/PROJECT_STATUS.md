@@ -263,18 +263,20 @@ accuracy is unchanged at 77.6%@5px — no accuracy improvement was found.** One 
 improvement was, and was integrated. **The frozen 156-pair benchmark was run 0 times**, so it
 retains full statistical value for future work.
 
-**The measurement that reframes the problem.** **74% of remaining failures are unreachable** —
-ground truth is not within 5px of *any* pooled candidate, so no re-scoring, re-ranking or
-tie-breaking stage can fix them (19 failures across two surfaces; `development` 4/7,
-a fresh degraded 40-pair surface 10/12). Sharper than the 45% candidate-generation figure from
-`experiments/oracle_ceiling_diagnostic/`; both were measured on different surfaces, but the
-direction is consistent and stronger here.
+**The measurement, after correction.** This campaign initially claimed **74% of failures are
+unreachable**, from 19 failures across two tuning surfaces. Re-measured on the frozen 156-pair
+benchmark (35 failures — `experiments/reachability_verification/`), the true figure is **37.1%**
+(13 of 35). The tuning surfaces were unrepresentative: the deliberately-degraded one over-weights
+families where candidate generation fails. **The 45% figure already recorded above from
+`experiments/oracle_ceiling_diagnostic/` was the accurate one**; the campaign's was the outlier.
+The overstated claim reached the project README and has been corrected there, in
+`experiments/REACHABILITY_CAMPAIGN.md`, and here.
 
-**And recall is not the constraint either.** Widening candidate generation lifts pool recall
-0.750 → 0.900 and converts **none** of it into accuracy: 144 configurations, **zero** rescues,
-breaks rising monotonically with recall. Production accuracy decomposes as
-`recall × selector efficiency` = 0.750 × 0.93 — **the selector is already ~93% efficient on the
-pool it is handed.** The lever is neither better scoring nor more candidates.
+**What the frozen benchmark actually shows.** Pool recall **0.917**, selector efficiency **0.846**.
+In **63%** of failures the true location IS in the pool — at median rank 3, losing to the winner by
+a median of only **0.029 ZNCC**. So discovery is largely solved and the headroom is in **selection
+among near-ties**. Widening candidate generation still converts no recall into accuracy (144
+configurations, zero rescues), which is unsurprising given recall was already 0.917.
 
 **Verdicts.** `discriminability_weighted/` (P3 weighted ZNCC) — REJECT, 0 rescues in 60 configs.
 `wide_pool_rescoring/` (wider pool + re-scorer, the one untested combination) — REJECT, 0 rescues
