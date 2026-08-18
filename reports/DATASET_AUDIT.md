@@ -42,7 +42,8 @@ against the regenerated on-disk metadata — see section 3 below for exact curre
   given a combinatorial space of 16 mat-grid positions x 6 presets, not a seeding artifact (verified:
   0 duplicate *full* signatures including crop location and ground truth).
 - **Rotation** (`rotation_deg`): 26/136 pairs (19.1%) nonzero, range -3.99&deg; to +3.84&deg;.
-- **Scale** (`extra_scale`): 26/136 pairs (19.1%) != 1.0, range 0.931-1.069 (the same 26 pairs sample
+- **Scale** (`extra_scale`): 26/136 pairs (19.1%) != 1.0, range 0.9014-1.0980 (widened by gate
+  exception 1, `reports/GATE_EXCEPTIONS.md`; this row previously read 0.931-1.069) (the same 26 pairs sample
   both together per family design). Both remain thin for a factor identified as important — this is
   exactly why the dedicated forensics sweeps (n=40/level for rotation and scale independently) exist,
   rather than trying to stretch the frozen benchmark's 26 pairs into confident controlled

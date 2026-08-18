@@ -42,8 +42,9 @@ radius, and comparable to what r=128 achieves (20.8 px). Two mechanisms explain 
 
 1. `deduplicate_by_location` already collapses candidates within 10px **across the whole pool**,
    after aggregation. Within-hypothesis suppression is largely redundant with it.
-2. Spatial diversity comes from **hypothesis diversity**, not from peak-picking. 81 scale×rotation
-   hypotheses × 2 PSF arms each contribute their own peaks, and those land in different places.
+2. Spatial diversity comes from **hypothesis diversity**, not from peak-picking. 99 scale×rotation
+   hypotheses (11 scales × 9 rotations) × 2 PSF arms each contribute their own peaks, and those land
+   in different places.
 
 So the radius was never the binding constraint. The small gains visible at k≥4 are `k` doing the
 work, and `experiments/wide_pool_rescoring/` already established that extra candidates convert to

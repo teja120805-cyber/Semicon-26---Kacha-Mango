@@ -257,7 +257,8 @@ choice in `reports/V2_ARCHITECTURE_PLAN.md` rather than claimed as a measured va
   impulse / additive / multiplicative noise models.
 
 - **OpenCV**, `matchTemplate` and the `TM_CCOEFF_NORMED` method definition.
-  <https://docs.opencv.org/4.x/df/dfb/group__imgproc__object.html>
+  <https://docs.opencv.org/5.x/df/dfb/group__imgproc__object.html>
+  (5.x, matching the pinned `opencv-python-headless==5.0.0.93`.)
   Software reference, not a citation. Included because `pipeline/matching.py` relies on
   `TM_CCOEFF_NORMED` being exactly zero-mean normalised cross-correlation, and that identity is what
   the documented formula states.
@@ -265,8 +266,8 @@ choice in `reports/V2_ARCHITECTURE_PLAN.md` rather than claimed as a measured va
 - **Applied Materials, *Drift-Sense Synthetic Data* (Hugging Face)** — the hackathon's provided
   starter kit, not an independent public source. Listed here only for provenance: its degradation
   code was read as a coverage reference and never imported, copied or executed, and only its
-  already-generated output images are used, as an external evaluation surface (see README section 3
-  and `reports/DEGRADATION_COVERAGE.md`).
+  already-generated output images are used, as an external evaluation surface (see the README's
+  "Dataset" section and `reports/DEGRADATION_COVERAGE.md`).
 
 ---
 
@@ -316,4 +317,5 @@ Row numbers match `reports/DEGRADATION_COVERAGE.md`. Tier as defined at the top 
 
 Each DOI above resolves through Crossref or the publisher; each ISBN was checked against the
 publisher's own catalogue page; each bare URL was fetched. Sources that could not be verified were
-dropped rather than listed — see the project report for the exclusion list.
+dropped rather than listed, and the dropped sources were not enumerated anywhere — there is no
+exclusion list to consult.

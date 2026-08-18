@@ -12,7 +12,7 @@ relative to the CSV's own directory unless absolute):
     python scripts/localize_pair.py --batch-csv pairs.csv --out predictions.csv
 
 Output columns/fields: pred_x, pred_y (Search-image pixels, origin
-top-left, per README section 8), confidence (winning classical match
+top-left, per README's "Dataset" section), confidence (winning classical match
 score), ambiguous, ambiguity_ratio, runtime_s. Ground truth is never read
 or required - this script is for genuinely unknown pairs.
 """

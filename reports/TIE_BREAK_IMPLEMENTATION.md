@@ -150,7 +150,7 @@ tight tier regardless of the new group-size/spread conditions). Full suite: 14 p
 
 **Final end-to-end validation** (full pipeline, not just the tiered logic in isolation) across 2
 independently-seeded datasets: frozen benchmark (n=132) 72.0% → 72.7%@5px, one confirmed
-catastrophic rescue (`ch_worst_case_006`, 118.5px → 4.6px), zero regressions across all 13
+catastrophic rescue (`ch_worst_case_006`, 118.5px → 4.6px — Measured at A6's integration, pre-PSF. On the current pipeline that pair is at 62.87px — exception 3 changed its candidate pool; see reports/GATE_EXCEPTIONS.md.), zero regressions across all 13
 families; fresh dataset (seed 502187, n=112) - mechanism fires safely, zero regressions, no
 analogous case to rescue on that particular draw. Full derivation:
 `experiments/multiway_tiebreak_v1/REPORT.md`.

@@ -77,7 +77,8 @@ frozen benchmark (n=132) and a genuinely fresh, independently-seeded dataset (se
 Integrity check: `max|error_px diff| = 1.42e-14` vs this sandbox's baseline.
 
 **Frozen** (n=132): 72.0% → 72.7%@5px. `rescue=1, break=0, catastrophic_new=0`. The rescue:
-`ch_worst_case_006`, 118.5px → 4.6px (`genuine_ambiguity` → `success` in the failure
+`ch_worst_case_006`, 118.5px → 4.6px **as measured at integration, pre-PSF; that pair now sits
+at 62.87px because gate exception 3 changed its candidate pool** (`genuine_ambiguity` → `success` in the failure
 taxonomy — i.e. the GT candidate genuinely was near-tied with the wrong winner by ZNCC
 score, exactly the scenario the spec's tie-break rule describes). Every one of the other 12
 families ties exactly; zero regressions. Runtime: 257.1s → 260.7s (1.01x — the mechanism

@@ -81,7 +81,16 @@ TIE_SCORE_EPSILON = 1e-6
 # benchmark n=132, one confirmed catastrophic rescue (ch_worst_case_006,
 # 118.5px -> 4.6px), zero regressions across all 13 families; fresh dataset
 # (seed 502187) n=112, mechanism fires safely with zero regressions and no
-# analogous case to rescue on that particular draw. Integrated as a
+# analogous case to rescue on that particular draw.
+#
+# NOTE (2026-08-18): that rescue figure is historical. It was measured before
+# gate exception 3 (PSF-matched dual-arm candidate generation) shipped;
+# ch_worst_case_006 now sits at 62.87px because the dual-arm pool no longer
+# presents the tie this tier originally broke. The mechanism here is
+# unchanged and still causes no per-family regression, but its headline
+# supporting case no longer reproduces - see reports/GATE_EXCEPTIONS.md.
+#
+# Integrated as a
 # documented gate exception - see reports/GATE_EXCEPTIONS.md for why the
 # automated gate's "must broadly improve pooled validation/held_out"
 # criteria don't fit a fix whose effect surface is, by construction, a rare

@@ -1,11 +1,14 @@
 # Proposed change — `AMBIGUITY_THRESHOLD` 0.92 → 0.990
 
-**Not applied.** `pipeline/` is not modified without explicit approval. This file is the exact diff
-plus the safety argument, so the decision can be made in one read.
+**Applied and integrated (2026-08-17).** `AMBIGUITY_THRESHOLD = 0.990` is live in `pipeline/localize.py`,
+integrated at the user's direction as **gate exception 4** — see `reports/GATE_EXCEPTIONS.md`. This
+file is retained as the exact diff plus the safety argument that the decision was made on; it was
+written before approval, when `pipeline/` was not modified without explicit approval, and the
+present tense below should be read against that point in time.
 
 ## The diff
 
-`pipeline/localize.py`, line 32 — one constant, no logic change:
+`pipeline/localize.py`, line 67 (was line 32 when this was written) — one constant, no logic change:
 
 ```diff
 -AMBIGUITY_THRESHOLD = 0.92  # second-best/best ZNCC ratio at or above this => flagged ambiguous
@@ -37,7 +40,7 @@ plus the safety argument, so the decision can be made in one read.
 
 | location | use |
 |---|---|
-| `pipeline/localize.py:170` | `ambiguous=amb_ratio >= AMBIGUITY_THRESHOLD` — sets a returned field |
+| `pipeline/localize.py:170` (now line 205, after integration) | `ambiguous=amb_ratio >= AMBIGUITY_THRESHOLD` — sets a returned field |
 | `pipeline/ranking.py:28` | comment only, explaining why `TIE_SCORE_EPSILON` is deliberately different |
 
 And every consumer of the `ambiguous` field only ever **writes it out**:

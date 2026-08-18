@@ -206,7 +206,7 @@ This gate is evaluated in `evaluation/benchmark.py` and its outcome (pass/fail p
 written into the relevant report — including a fail, if that's what happens. See
 `reports/FINAL_RESULTS.md` for how this was applied across every candidate approach tested.
 
-**Three changes are in production despite not passing all 7 criteria.** They are logged, with the
+**Four changes are in production despite not passing all 7 criteria.** They are logged, with the
 specific criteria each failed and the evidence that justified shipping anyway, in
 `reports/GATE_EXCEPTIONS.md`. Anyone reading this section should read that file too — "in
 production" does not by itself mean "passed all 7." Each exception is granted for its own cited
@@ -226,6 +226,15 @@ Applied Materials/Hugging Face reference generator) are copied — as data files
 - Is reported **separately** from V2's own generator splits everywhere (baseline report, model
   report, Streamlit dashboard) — never pooled into a single blended number.
 
+  > **Amended 2026-08-18.** Practice diverged from this contract and the contract is the part
+  > that was wrong. The headline figure *is* pooled: 77.6%@5px over all 156 pairs, the 136
+  > internally-generated plus the 20 `cross_generator`. Pooling is what makes the number
+  > comparable to the problem statement's single accuracy target, and `cross_generator` is
+  > reported separately as well, in every split table. What the original clause was protecting
+  > against is real and still enforced: `cross_generator` carries no `structural_family`,
+  > `rotation_deg`, `extra_scale` or `crosses_*_boundary` metadata, so it is excluded from every
+  > per-factor breakdown rather than silently defaulted into one. See `reports/DATASET_AUDIT.md`.
+
 ---
 
 ## 10. Experiment isolation strategy
@@ -240,7 +249,7 @@ model/pipeline change that has passed every criterion in section 8 may be merged
 
 ## 11. Streamlit architecture
 
-See README section 7 for the current, up-to-date section list — this design contract predates several
+See the README's "Documentation" section for the current, up-to-date section list — this design contract predates several
 sections (Generate Sample, Experiment Results) added after the accuracy-improvement research phase.
 
 ## 12. Vocabulary lock
@@ -248,6 +257,6 @@ sections (Generate Sample, Experiment Results) added after the accuracy-improvem
 - **Structural family** — a named difficulty/condition category (crop mode + degradation overrides).
   Defined in `generator/dataset_generator.py::FAMILIES`.
 - **Acquisition variant** — one of several differently-degraded Search re-acquisitions of the *same*
-  Reference/location. Defined in `generator/dataset_generator.py::generate_acquisition_variants`.
+  Reference/location. Defined in `generator/dataset_generator.py::generate_acquisition_variant_set`.
 
 These terms are used consistently in code, metadata field names, and every doc in this repository.

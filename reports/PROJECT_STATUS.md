@@ -3,7 +3,7 @@
 Running record of where DriftSense V2 stands against the phase plan (repo audit → terminology
 cleanup → dataset audit → accuracy forensics → dataset fixes → frozen benchmark → targeted
 experiments → integration gate → UI → cleanup → validation). Updated as phases complete; not a
-duplicate of the detail already in the other three `reports/` documents.
+duplicate of the detail already in the other 12 of the 13 `reports/` documents.
 
 ## Done
 
@@ -182,9 +182,15 @@ current repository state).
 diff verified `candidate_generation.py`/`refinement.py`/`feature_extraction.py` untouched;
 `localize.py`/`matching.py`/`ranking.py` only carry docstring path edits). Real per-pair failure
 decomposition run directly against the frozen benchmark (`scripts/decompose_baseline_failures.py`,
-`outputs/reports/baseline_failure_decomposition.csv`) — 31/156 candidate-generation failures vs.
-11 ranking + 7 ambiguity, concentrated where no boundary is present (41.2% vs. 3.4% failure rate).
-Visual analysis of the top-10 catastrophic failures (`outputs/visualizations/catastrophic_failures/`)
+`outputs/reports/baseline_failure_decomposition.csv`, gitignored — regenerable, not checked in) —
+35/156 failures, split 13 discovery (37.1%)
+vs. 22 selection (62.9%), concentrated where no boundary is present (41.2% vs. 7.95% failure rate).
+*(Corrected 2026-08-17: this previously read "31/156 candidate-generation failures vs. 11 ranking +
+7 ambiguity" — 49 failures, the superseded 74.36% run — and quoted 3.4%, which is the boundary
+**catastrophic** >50px rate, not failure@5px. The 41.2% non-boundary figure is correct.)*
+Visual analysis of the top-10 catastrophic failures (`outputs/visualizations/catastrophic_failures/`
+— not in the repository; regenerate with `scripts/visualize_catastrophic_failures.py`, which needs
+the decomposition CSV above first)
 found the worst errors specifically concentrate in high-periodicity, zero-rotation/scale cases — a
 sharper finding than the pooled averages. Three new experiments tested against the gate:
 `experiments/periodicity/` (gradient-domain and ensemble candidate scoring — both **REJECT**, net
@@ -223,7 +229,8 @@ rescue +16 and +6, zero to one break, and a clean mechanistic split (every rotat
 family improved on both datasets, every non-rotation/scale family showed exactly zero change on
 both). `pipeline/candidate_generation.py`'s `DEFAULT_SCALE_HYPOTHESES`/`DEFAULT_ROTATION_HYPOTHESES`
 were widened from 5x5 (25 combinations) to 9x9 (81 combinations), same span — the only production
-change. Fresh authoritative benchmark: **71.2%@5px pooled** (was 68.6%), mean error 53.6px (was
+change. Fresh authoritative benchmark *at that time*: **71.2%@5px pooled** (was 68.6%; production is now
+77.6% after gate exceptions A2/A6, PSF dual-arm and the threshold recalibration), mean error 53.6px (was
 65.3px), runtime ~3.1x. Full evidence and exact diff: `reports/ACCURACY_IMPROVEMENT_PHASE.md`.
 
 ## Phase — template-fidelity campaign (2026-08-16)
@@ -258,7 +265,7 @@ is a calibration change rather than an accuracy one and was left as a candidate.
 
 ## Phase — reachability campaign (2026-08-17)
 
-Six independent experiments, consolidated in `experiments/REACHABILITY_CAMPAIGN.md`. **Production
+Eight independent experiments, consolidated in `experiments/REACHABILITY_CAMPAIGN.md`. **Production
 accuracy is unchanged at 77.6%@5px — no accuracy improvement was found.** One calibration
 improvement was, and was integrated. **The frozen 156-pair benchmark was run 0 times**, so it
 retains full statistical value for future work.
@@ -286,6 +293,11 @@ confidence statistic (AUC 0.577 vs the existing pool gap's 0.964), refuting
 `development`, exactly 0 effect on 40 independent pairs, p = 0.25; **deliberately not integrated**).
 `template_fidelity_ablation/` (spatial high/band-pass) — REJECT, monotone harm −2/−4/−6 at σ 8/16/32.
 `aperiodic_anchor/` (sub-model spatial prior) — REJECT, 0 rescues at every radius.
+`nms_spatial_diversity/` (is the candidate pool spatially degenerate?) — diagnostic: **no**, recall
+at equal k is identical (0.8333) across a 16x range of NMS suppression radius, so the radius was
+never the binding constraint — REJECT. `ddis_diversity/` (P5, Deformable Diversity Similarity) —
+REJECT at the diagnostic stage, before building a harness: on the 22 reachable failures DDIS prefers
+the true location on 11/22 (exactly chance) against a pre-registered >70% bar.
 
 **Integrated: `AMBIGUITY_THRESHOLD` 0.92 → 0.990** (gate exception 4 — a *fourth kind*, "not
 evaluable by the gate" rather than "fails it"). Item 5 below was right that the constant is

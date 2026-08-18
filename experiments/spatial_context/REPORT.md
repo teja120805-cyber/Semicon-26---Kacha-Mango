@@ -20,7 +20,8 @@ periodicity_strength` so that, matching the brief's framing, a **more positive**
 distinctiveness(true) - distinctiveness(decoy)` means wider context favors the true location.
 
 Dataset: the 45 largest known failures on the frozen benchmark (from
-`outputs/reports/baseline_failure_decomposition.csv`, spanning all three failure categories —
+`outputs/reports/baseline_failure_decomposition.csv` — not checked in; regenerate with
+`scripts/decompose_baseline_failures.py` — spanning all three failure categories —
 candidate-generation, ranking, and genuine-ambiguity) plus a matched sample of 45 currently-correct
 pairs as a sanity control. For each, extracted crops centered on the true location and on the
 pipeline's actual winning (decoy) location, at 5 window sizes: 100/125/150/200/300px (1.0x-3.0x the

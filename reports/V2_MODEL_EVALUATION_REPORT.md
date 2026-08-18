@@ -56,7 +56,7 @@ consistently across all 3 seeds. This is a large, decisive, reproducible effect 
 `model/TRAINING_PROTOCOL.md` stated this as the likely outcome before training: 72 triplets, mined
 from only 2 of V2's structural families (`dev_strip_anchor`, `dev_single_mat`), is a very small and
 narrow training signal for a from-scratch CNN to generalize from onto 13 other families it never saw
-during training. The training curves confirm this concretely: `experiments/embedding_reranker_v1/checkpoints/training_history_seed*.json`
+during training. The training curves confirm this concretely: `experiments/embedding_reranker_v1/training_histories/training_history_seed*.json`
 shows **training loss collapsing to ~0 within 10-15 epochs** while the internal early-stopping loss
 (on the held-out `dev_dense_periodic` family) plateaus around 0.20–0.29 and does not track it down —
 textbook overfitting on a training set this size, exactly as anticipated.

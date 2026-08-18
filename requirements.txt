@@ -7,7 +7,8 @@ numpy>=2.0
 # by several percentage points. numpy's Generator API held up fine across
 # the 2.4.4 vs 2.5.1 version difference tested alongside this (near-zero
 # residual once opencv was matched) - this pin is specifically to close the
-# opencv gap. See reports/GATE_EXCEPTIONS.md and README.md section 8.
+# opencv gap. See reports/GATE_EXCEPTIONS.md and README.md's "Reproducibility"
+# section.
 opencv-python-headless==5.0.0.93
 scipy>=1.13
 pandas>=2.2

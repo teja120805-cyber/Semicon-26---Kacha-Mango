@@ -3,16 +3,30 @@
 > **Revised 2026-08-16 — periodicity is a confound, not the primary cause.** This report's
 > Finding 1 names periodicity the strongest single factor. That conclusion is correct *within this
 > report's controlled sweep* (which holds boundary absent and varies pitch), but it is not what
-> dominates on the real benchmark. Measured across all 156 pairs, accuracy is governed by whether
-> the Reference crop is **unique** at all: `uniqueness_score = 0` scores 50.0% (n=48) and
-> everything above 0 scores 89.8% (n=108). Holding uniqueness fixed, high vs. low periodicity moves
-> accuracy by **0.4pp** — nothing. Periodicity correlates with failure because non-unique crops
-> tend to be periodic, not because periodicity is the operative variable.
+> dominates on the real benchmark. What governs accuracy is whether the Reference crop contains a
+> **structural boundary**: on the 136 internally-generated pairs, crops crossing a mat or strip
+> boundary score **92.0% (81/88)** against **50.0% (24/48)** for crops that cross neither. Holding
+> boundary content fixed, high vs. low periodicity moves accuracy by **0.4pp** — nothing.
+> Periodicity correlates with failure because boundary-free crops tend to be periodic, not because
+> periodicity is the operative variable.
 >
-> This report's Finding 3 (boundary presence is strongly protective) is the same effect seen from
-> the other side, and it holds up: crops crossing a mat or strip boundary score 92.0% (n=88) vs
-> 58.8% (n=68) for those crossing neither. Read Finding 3 as the primary result and Finding 1 as a
-> secondary effect *within* the non-unique subgroup.
+> This report's Finding 3 (boundary presence is strongly protective) is therefore the primary
+> result; read Finding 1 as a secondary effect *within* the boundary-free subgroup.
+>
+> **Correction, 2026-08-18 — "uniqueness" is not a second, corroborating measurement.** Earlier
+> versions of this note quoted `uniqueness_score = 0` (50.0%, n=48) versus above-zero (89.8%,
+> n=108) *alongside* the boundary contrast, as if the two agreed independently.
+> `generator/metadata.py::uniqueness_score` is **computed from** `crosses_strip` and `crosses_mat`,
+> so `uniqueness_score > 0` and "crosses a boundary" select the identical 88 internal pairs —
+> verified on all 136 rows. It is one finding under two names, not two findings. The boundary
+> framing is kept because it names the physical property; the uniqueness framing is retained only
+> where the source experiment used that label.
+>
+> The n=108 / n=68 buckets also silently absorbed the 20 `cross_generator` pairs, which carry no
+> `crosses_*_boundary` metadata and so default to `False` — landing in the no-boundary bucket by
+> absence of measurement rather than measurement, and inflating it (they score 80%). The
+> internal-only figures above are the honest ones. Pooled over all 156 the contrast reads 92.0%
+> vs 58.8%.
 >
 > **Figures in this note recomputed 2026-08-17** against the current 77.6%@5px production run. The
 > earlier values (43.8% / 88.0% for uniqueness, 89.8% vs 54.4% for boundary) were measured on the
@@ -155,20 +169,29 @@ correlational and this controlled setting) and rules out noise as a primary targ
 Everything above uses `experiments/accuracy_forensics/`'s dedicated controlled-sweep data. This
 section applies the same instrumented pipeline wrapper directly to the actual 156-pair frozen
 benchmark (`scripts/decompose_baseline_failures.py`, output:
-`outputs/reports/baseline_failure_decomposition.csv`), to confirm the sweep findings aren't an
-artifact of the synthetic sweep design.
+`outputs/reports/baseline_failure_decomposition.csv` — **regenerable, not in the repository**; it is
+gitignored and appears only after `python scripts/decompose_baseline_failures.py` is run), to
+confirm the sweep findings aren't an artifact of the synthetic sweep design.
 
-Pooled failure composition (n=156): **success 107 (68.6%), `candidate_generation` 31 (19.9%),
-`candidate_ranking` 11 (7.1%), `genuine_ambiguity` 7 (4.5%)**. Candidate-generation failures alone
-outnumber ranking + ambiguity combined — confirming, on the real benchmark, that the dominant
-failure mode is the search never proposing the true location, not picking the wrong one from a pool
-that contains it.
+> **Correction (2026-08-17):** the two paragraphs below previously read "success 107 (68.6%),
+> `candidate_generation` 31 (19.9%), `candidate_ranking` 11 (7.1%), `genuine_ambiguity` 7 (4.5%)" —
+> 49 failures in total, which belongs to the superseded 74.36% run, not the current one. They also
+> quoted 3.4% as the boundary failure@5px rate; that figure is in fact the boundary **catastrophic**
+> (>50px) rate. Both are restated against the current 35 failures. The 41.2% non-boundary failure
+> rate was and remains correct. The qualitative conclusions are unchanged, only the magnitudes.
+
+Pooled failure composition (n=156): **success 121 (77.6%), 35 failures — 13 discovery (37.1%),
+22 selection (62.9%)**. Selection failures (the true location *is* in the pooled candidate set but
+loses a near-tie) outnumber discovery failures (the true location is never proposed within 5px of
+any candidate) roughly 5:3 — so on the real benchmark the reachable share of the failure set is the
+larger one, but discovery failures remain a substantial floor that no re-scoring or re-ranking stage
+can reach.
 
 **Boundary presence correlates specifically with which failure type occurs, not just overall
-accuracy**: with a boundary in view, only 3/88 pairs (3.4%) fail at candidate generation; without
-one, 28/68 (41.2%) do. This sharpens Finding 1: boundary absence doesn't just make localization
-harder in general, it specifically causes the classical search to never find the true location as a
-competitive peak.
+accuracy**: with a boundary in view, 7/88 pairs (**7.95%**) fail at 5px, and only 3/88 (3.4%) fail
+catastrophically (>50px); without one, 28/68 (41.2%) fail. This sharpens Finding 1: boundary absence
+doesn't just make localization harder in general, it specifically causes the classical search to
+never find the true location as a competitive peak.
 
 Rotation/scale buckets on the real benchmark are too thin to draw independent conclusions (only
 26/156 pairs have any drift at all, split further into low/medium/high buckets leaves single digits
@@ -184,10 +207,15 @@ a ranking one.
 `scripts/visualize_catastrophic_failures.py` renders Reference + Search (with ground-truth diamond
 and predicted-location cross) for the 10 largest-error pairs on the frozen benchmark, alongside each
 one's full diagnostics (candidate rank/score, score margin, rotation/scale hypothesis, periodicity
-score) — `outputs/visualizations/catastrophic_failures/`.
+score) — `outputs/visualizations/catastrophic_failures/`. **That directory is not in the
+repository**: it is produced by running `scripts/visualize_catastrophic_failures.py`, which itself
+first needs `outputs/reports/baseline_failure_decomposition.csv` from
+`scripts/decompose_baseline_failures.py`. The figures below were read off that run.
 
-**9 of the top 10 have `periodicity_score` >= 0.64, and 7 of 10 have it at the maximum (1.0,
-`mat_dense` preset). 7 of 10 have essentially zero rotation/scale drift.** This is a sharper finding
+**6 of the top 10 have `periodicity_score` >= 0.64, and 5 of 10 have it at the maximum (1.0,
+`mat_dense` preset). 4 of 10 have essentially zero rotation *and* scale drift.** *(Recomputed
+2026-08-17 on the current manifest; these previously read 9 of 10, 7 of 10 and 7 of 10 against the
+superseded run. The direction of the finding holds, at a weaker majority.)* This is a sharper finding
 than the pooled averages alone suggest: rotation/scale grid-misalignment (Finding 2) is real and
 measurable, but the *single worst* failures — the ones dragging mean/P95/max error up — are
 overwhelmingly pure-periodicity cases, not rotation/scale cases. The mechanism why: a periodicity
@@ -195,10 +223,14 @@ failure can jump to a wrong repeat arbitrarily far away (hundreds of px, bounded
 image size), while a grid-misalignment failure is typically a wrong-but-nearby location within the
 same search window — still wrong, but rarely as catastrophic in magnitude unless it also coincides
 with periodicity (as in `ch_worst_case_006`, which combines maximum periodicity, a boundary, *and*
-severe rotation+scale grid misalignment simultaneously — the single worst combined case in the
-benchmark, 583px error).
+severe rotation+scale grid misalignment simultaneously — **62.87px error** on the current manifest).
+*(Corrected 2026-08-17: this previously called `ch_worst_case_006` "the single worst combined case
+in the benchmark, 583px error". It is no longer either — the multiway centre tie-break, gate
+exception A6, rescued it. The single worst pair on the current manifest is
+**`ho_rotation_drift_007` at 850.55px**.)*
 
-Concrete examples from the top 10 (all in `outputs/reports/baseline_failure_decomposition.csv`):
+Concrete examples from the top 10 (all in `outputs/reports/baseline_failure_decomposition.csv` —
+regenerate it with `scripts/decompose_baseline_failures.py`; it is not checked in):
 
 - Four of the ten (`dev_dense_periodic_{000,003,004,005}`) are `candidate_generation` failures with
   `periodicity_score=1.0`, zero rotation/scale, and a **score margin of only 0.002-0.007** between

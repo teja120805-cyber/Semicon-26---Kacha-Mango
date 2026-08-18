@@ -227,7 +227,10 @@ which keeps a value and its justification in one place instead of two.
 ## Getting Started
 
 ```bash
-python -m venv .venv && source .venv/Scripts/activate   # or .venv\Scripts\activate on native Windows shells
+python -m venv .venv
+source .venv/bin/activate        # Linux / macOS
+# .venv\Scripts\activate       # Windows (cmd / PowerShell)
+# source .venv/Scripts/activate # Windows (Git Bash / MSYS)
 pip install -r requirements.txt
 ```
 
@@ -261,6 +264,57 @@ python scripts/localize_pair.py --batch-csv pairs.csv --out predictions.csv
 python scripts/train_model.py --seeds 20260101,20260102,20260103
 python scripts/evaluate_model.py --learned-checkpoint experiments/embedding_reranker_v1/checkpoints/embedding_net_seed20260101.pt
 ```
+
+`generate_dataset.py` and `localize.py` at the repository root are thin wrappers for the same two
+scripts, matching the help document's recommended layout — either invocation works.
+
+### Input / output example
+
+Real output, copied from a run on a generated pair:
+
+```console
+$ python localize.py --reference data/development/dev_strip_anchor_000_reference.png \
+                     --search    data/development/dev_strip_anchor_000_search.png
+{
+  "reference_path": "data/development/dev_strip_anchor_000_reference.png",
+  "search_path": "data/development/dev_strip_anchor_000_search.png",
+  "pred_x": 793.1554901003838,
+  "pred_y": 664.4950627088547,
+  "confidence": 0.9086195826530457,
+  "ambiguous": false,
+  "ambiguity_ratio": 0.9832900674339271,
+  "runtime_s": 8.071727141999872
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `pred_x`, `pred_y` | Predicted target centre in Search-image pixels. Origin top-left, `x` right, `y` down. Sub-pixel: the parabolic peak fit returns continuous coordinates |
+| `confidence` | ZNCC score of the winning match, in `[-1, 1]`. Comparable across pairs |
+| `ambiguous` | `true` when a rival location more than 10 px away scored nearly as well — treat the result as needing review |
+| `ambiguity_ratio` | Runner-up score ÷ winner score. `ambiguous` is this ≥ `AMBIGUITY_THRESHOLD` (0.990) |
+| `runtime_s` | Wall-clock for the `localize()` call only; excludes image I/O. Machine-dependent |
+
+Ground truth is never read, so this works on genuinely unknown pairs. In batch mode the same
+fields become columns of the output CSV, one row per input pair.
+
+### Assumptions
+
+The pipeline assumes all of the following. Each is a real constraint, not a formality:
+
+- **Both images are single-channel grayscale, 1000×1000.** Other sizes run, but the scale
+  hypothesis grid is centred on the 10:1 field ratio those dimensions imply.
+- **The Reference is genuinely contained in the Search image.** There is no "not present" output;
+  the pipeline always returns its best candidate. `ambiguous` is the signal to distrust it.
+- **The scale relationship is near 10:1.** The grid spans 9:1–11:1. Outside that, the true location
+  is not in the hypothesis set and no amount of re-scoring recovers it.
+- **Residual rotation is within roughly ±5°.** Same reasoning — the grid spans ±5° in 1.25° steps.
+- **The two images come from the same physical structure**, differing by acquisition degradation
+  rather than by process or design revision.
+- **Intensity may differ arbitrarily between the two.** ZNCC is invariant to affine intensity
+  change, so exposure, gain and gamma differences are handled by construction.
+- **Single-process CPU execution.** Nothing in `pipeline/` threads or forks; runtime scales with
+  the hypothesis count, not with available cores.
 
 The Streamlit app (`python scripts/run_demo.py`) additionally provides: Executive Summary, Generate
 Sample (every generator parameter exposed as a live control), Live Localization (upload and run),
@@ -359,13 +413,26 @@ classical. Full analysis: `reports/V2_MODEL_EVALUATION_REPORT.md`.
 
 ## Known Limitations
 
-- **Crop uniqueness, not periodicity, governs accuracy.** Reference crops containing no
-  distinguishing macro structure (`uniqueness_score = 0`) score 50.0% (24/48), against 89.8%
-  (97/108) for all others; crops crossing a mat or strip boundary score 92.0% (81/88) against
-  58.8% (40/68) for those crossing neither. Periodicity correlates with failure because
-  non-unique crops tend to be periodic — with
-  uniqueness held fixed it moves accuracy by well under one point. Analysis:
-  `experiments/crop_uniqueness_ceiling/REPORT.md` and `reports/ACCURACY_FORENSICS.md`.
+- **Whether the crop contains a structural boundary, not how periodic it is, governs accuracy.**
+  On the 136 internally-generated pairs, crops crossing a mat or strip boundary score **92.0%
+  (81/88)**; crops that cross neither score **50.0% (24/48)**. Periodicity correlates with failure
+  because boundary-free crops tend to be periodic — with boundary content held fixed, periodicity
+  moves accuracy by well under one point (`experiments/crop_uniqueness_ceiling/`).
+
+  Two caveats, because this number is easy to overstate:
+
+  1. **`uniqueness_score` is not independent evidence for the same claim.**
+     `generator/metadata.py::uniqueness_score` is *computed from* `crosses_strip` and
+     `crosses_mat`, so `uniqueness_score > 0` and "crosses a boundary" are the same 88 pairs —
+     verified identical on all 136 internal rows. Earlier drafts of this README quoted both as if
+     they were two findings. They are one finding, measured once, under two names.
+  2. **The 20 `cross_generator` pairs are excluded from the split above.** They carry no
+     `crosses_*_boundary` metadata, so they default to `False` and would land in the no-boundary
+     bucket by absence of measurement rather than by measurement — inflating it (they score 80%)
+     and understating the effect. Pooled over all 156 the same contrast reads 92.0% vs 58.8%;
+     the internal-only figures are the honest ones. See `reports/DATASET_AUDIT.md`.
+
+  Full analysis: `experiments/crop_uniqueness_ceiling/REPORT.md`, `reports/ACCURACY_FORENSICS.md`.
 - Remaining failures are near-ties rather than blowouts: the correct location is scored within 0.05
   ZNCC of the chosen one in every failing pair measured. Correlation fidelity at the true location,
   not candidate ranking, is the active constraint.
@@ -374,10 +441,14 @@ classical. Full analysis: `reports/V2_MODEL_EVALUATION_REPORT.md`.
   candidate, so no re-scoring or re-ranking stage can reach them; in the remaining **63%** the true
   location *is* in the pool — at median rank 3, losing to the winner by a median of only 0.029
   ZNCC. Pool recall is 0.917 and selector efficiency is 0.846, so the binding constraint is
-  choosing correctly among near-ties rather than discovering the location. That said, twelve
-  independent attempts at exactly that selection problem have all been rejected — nine in
-  `experiments/ACCURACY_90_CAMPAIGN.md`, three in `experiments/REACHABILITY_CAMPAIGN.md` — so the
-  near-tie is real but nothing tried so far can break it.
+  choosing correctly among near-ties rather than discovering the location. That said, **every
+  independent attempt at exactly that selection problem has been rejected** — nine in
+  `experiments/ACCURACY_90_CAMPAIGN.md`, eight in `experiments/REACHABILITY_CAMPAIGN.md`, and five
+  more in `experiments/BATCH_2026-08-17_REPORT.md` — so the near-tie is real, and nothing tried so
+  far can break it. The last of those, `gated_escalation`, is the closest: pooled across five
+  pre-registered seeds it rescues 29 pairs and breaks 10 (sign test p = 0.0017), yet **no seed
+  passes the 7-criterion gate** and one regresses outright. Real in expectation, unshippable per
+  draw.
 - The `ambiguous` flag is a reporting output only. Nothing in the pipeline reads it to make a
   decision, and it captures 85.7% of failures rather than all of them — a triage aid, not a
   correctness guarantee. Its precision depends on the failure base rate of the population measured,
@@ -422,7 +493,7 @@ what is actually here.
 | `RESEARCH_SURVEY_SCORING.md` | External literature/patent survey of scoring approaches, and the ranked proposals drawn from it |
 | `HACKATHON_COMPLIANCE_CHECKLIST.md` | Point-by-point mapping of every stated problem-statement requirement to where it is satisfied |
 
-Two consolidated experiment campaigns sit alongside these, in `experiments/`:
+Three consolidated experiment campaigns sit alongside these, in `experiments/`:
 
 | Campaign | What it covers |
 |---|---|

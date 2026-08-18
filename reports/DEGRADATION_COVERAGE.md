@@ -7,7 +7,7 @@ imaging literature, and states the physical motivation and source for each.
 Methodology: read the reference generator's imaging/degradation code (`sem_imaging.py`,
 `structural_defects.py`, `pipeline.py`/`GenerationParams`) directly as a read-only reference — its
 code is never imported, copied, or executed by this project; only its already-generated output
-images are used, and only as an external evaluation surface (see README section 3).
+images are used, and only as an external evaluation surface (see the README's "Dataset" section).
 
 ## Coverage table
 

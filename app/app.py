@@ -1245,13 +1245,14 @@ def render_executive_summary() -> None:
           "means &ldquo;passed all seven&rdquo; — see <b>07 Experiment Results</b>.",
           token="4 logged")
     entry("in", "the finding that reframed the problem",
-          "Crop uniqueness, not periodicity, governs accuracy",
-          "The rubric names repeated-pattern ambiguity. Controlled forensics found that crops "
-          "with no distinguishing macro structure score far below the rest, and that periodicity "
-          "correlates with failure mainly because non-unique crops tend to be periodic. With "
-          "uniqueness held fixed, periodicity moves accuracy by well under a point. Full "
-          "workings in <code>reports/ACCURACY_FORENSICS.md</code>; case by case on "
-          "<b>06 Failure Analysis</b>.")
+          "Structural boundaries govern accuracy &mdash; not periodicity",
+          "The rubric names repeated-pattern ambiguity as the difficulty. Controlled forensics "
+          "found something else. On the 136 internally-generated pairs, crops crossing a mat or "
+          "strip boundary score <b>92.0%</b> (81/88) against <b>50.0%</b> (24/48) for crops "
+          "crossing neither. Hold boundary content fixed and periodicity moves accuracy by well "
+          "under a point &mdash; it correlates with failure only because boundary-free crops "
+          "tend to be periodic. Full workings in <code>reports/ACCURACY_FORENSICS.md</code>; "
+          "case by case on <b>06 Failure Analysis</b>.")
 
 
 def render_generate_sample(gen_overrides: dict, gen_crop_mode: str) -> None:
@@ -1527,19 +1528,22 @@ def render_experiment_results() -> None:
         "of the result, not something to hide before a demo.")
 
     mark("01", "What drives failure")
-    lede("Four findings, in the order of how much they move the number.")
+    lede("Three findings, in the order of how much they move the number.")
     drivers = [
-        ("01", "Boundary presence",
-         "The strongest lever measured. The same rotation/scale misalignment is far more "
-         "recoverable when a mat boundary is in view than when it is not."),
-        ("02", "Crop uniqueness, not periodicity",
-         "Crops with no distinguishing macro structure score far below the rest. With "
-         "uniqueness held fixed, periodicity moves accuracy by well under a point "
-         "(<code>experiments/crop_uniqueness_ceiling/</code>)."),
-        ("03", "Hypothesis-grid misalignment",
+        ("01", "Boundary presence — and it is not periodicity",
+         "The strongest lever measured. On the 136 internally-generated pairs, crops crossing a "
+         "mat or strip boundary score <b>92.0%</b> (81/88); crops crossing neither score "
+         "<b>50.0%</b> (24/48). The same rotation/scale misalignment is far more recoverable when "
+         "a boundary is in view. Hold boundary content fixed and periodicity moves accuracy by "
+         "well under a point — it correlates with failure only because boundary-free crops tend "
+         "to be periodic (<code>experiments/crop_uniqueness_ceiling/</code>). "
+         "<i>One finding, not two: <code>uniqueness_score</code> is computed from the boundary "
+         "flags, so it selects the identical 88 pairs. Earlier drafts quoted both as if they "
+         "agreed independently.</i>"),
+        ("02", "Hypothesis-grid misalignment",
          "Damage tracks distance to the nearest tested scale/rotation hypothesis, not the "
          "magnitude of the drift itself."),
-        ("04", "Noise, raster drift, row jitter",
+        ("03", "Noise, raster drift, row jitter",
          "Minor factors throughout, alone or in combination. Worth stating plainly, because it "
          "is the opposite of what the acquisition parameters suggest."),
     ]

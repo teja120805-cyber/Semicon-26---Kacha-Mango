@@ -13,6 +13,14 @@ Four results:
 1. **Accuracy is governed by `uniqueness_score`, and periodicity is a confound, not a cause.**
    Crops with `uniqueness_score = 0` score 43.8% (n=48); everything else scores 88.0% (n=108).
    Holding uniqueness fixed, high vs. low periodicity changes accuracy by **0.4pp** — nothing.
+
+   > **Recomputed 2026-08-18 on the current 77.6% production run:** 50.0% (24/48) versus
+   > 89.8% (97/108). The conclusion is unchanged; only the magnitudes moved. Note also that
+   > `uniqueness_score` is *computed from* the boundary flags
+   > (`generator/metadata.py::uniqueness_score`), so this split and the boundary split are the
+   > same 88 internal pairs under two names — not two independent measurements. Internal-only
+   > figures (excluding the 20 `cross_generator` pairs, which carry no boundary metadata):
+   > 50.0% (24/48) versus 92.0% (81/88).
 2. **The task is nevertheless well-posed.** 154 of 156 reference crops have a *unique* origin at a
    0.95 content-identity threshold, and **zero** of the 40 failures picked a location whose image
    content matches ground truth above 0.95 (median 0.73). The pipeline is not picking a

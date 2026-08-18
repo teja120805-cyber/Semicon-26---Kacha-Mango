@@ -69,9 +69,13 @@ batch report consolidates every entry below except `hypothesis_ensemble/`, which
 
 ### Index completeness — the remaining directories
 
-The tables above cover the campaigns chronologically. These twelve directories are also present and
-also carry a `REPORT.md`; they are listed here so this index accounts for **every** directory on
-disk rather than a curated subset.
+The tables above cover the campaigns chronologically. These sixteen directories are also present;
+they are listed here so this index accounts for **every** one of the 42 experiment directories on
+disk rather than a curated subset. All but `finer_grid_validation/` carry a `REPORT.md`; that one
+records itself in `FORWARD_HYPOTHESIS.md` + `INTEGRATION_RECOMMENDATION.md` instead, and is linked
+accordingly. *(Corrected 2026-08-17: this section previously said "twelve" and claimed full
+coverage while four directories — `scale_range_v1/`, `multiway_tiebreak_v1/`,
+`finer_grid_validation/`, `reachability_verification/` — had no row at all.)*
 
 | Experiment | Status | One-line result |
 |---|---|---|
@@ -87,3 +91,7 @@ disk rather than a curated subset.
 | [`center_tiebreak_v2/`](center_tiebreak_v2/REPORT.md) | **Rejected** | A genuinely-working centre tie-break. Fails the integration gate on criterion 2 and introduced a 497px regression. Superseded by the multiway-gated form that became gate exception A6. |
 | [`learned_candidate_generator/`](learned_candidate_generator/REPORT.md) | **Rejected** | A learned proposal generator. Its dense-grid proposals almost never land on the true location, so it cannot feed the ranker. |
 | [`spatial_context/`](spatial_context/REPORT.md) | **Inconclusive** | Spatial context against periodic decoys. Evidence points to an information ceiling rather than a classical fix; recorded as inconclusive rather than rejected, because the negative result is not clean. |
+| [`scale_range_v1/`](scale_range_v1/REPORT.md) | **INTEGRATED (2026-08-15)** — gate exception A2 | Widens both the dataset's scale drift and the pipeline's scale hypothesis grid to the literal 9:1–11:1 the spec states (grid 9 → 11 points, 9.0–11.0 at the same 0.2 step; dataset `extra_scale` (0.93, 1.07) → (0.90, 1.10) on the three scale-drift families). Exact tie on every split/family/metric on the frozen benchmark — a genuine no-op on data that never needed it — and 70.5% → 71.4%@5px with zero regressions on a fresh independently-seeded draw. Fails gate criteria 1/2 structurally (it can only ever move 3 of 15 families, none in `validation`), so it shipped as a documented exception. |
+| [`multiway_tiebreak_v1/`](multiway_tiebreak_v1/REPORT.md) | **INTEGRATED (2026-08-15)** — gate exception A6 | Third and successful attempt at making the spec's "return the match closest to the centre" rule actually engage, after two rejections. Adds two structural gates on top of a widened score-gap epsilon: `min_group_size=3` (a periodic pileup produces many near-identical peaks; a coincidental closeness produces exactly 2 — the condition both prior attempts never reached) and a 200px `max_spread_px` cap. Zero regressions across two independent datasets, one confirmed catastrophic rescue (`ch_worst_case_006`, 118.5px → 4.6px — measured pre-PSF; now 62.87px after exception 3 changed that pair's pool); the fresh draw shows it firing safely with no analogous case to rescue, so it is real and inert-when-inapplicable rather than broadly proven. |
+| [`finer_grid_validation/`](finer_grid_validation/INTEGRATION_RECOMMENDATION.md) | **PASS** — the validation campaign behind the integration of `finer_hypothesis_grid` | A validation set built deliberately from the conditions the finer grid targets (11 categories A–K, 12 pairs each, 132 pairs) on two independent seeds. Net rescue **+16 / +6** (16/0 and 7/1 rescue/break), acc@5px 52.3% → 64.4% and 54.5% → 59.1%, >50px 37.1% → 26.5% and 31.8% → 26.5%, at ~3.1x runtime. Critically, the gain is mechanistically confined to exactly the families it should affect, with zero change on every family it should not touch — the evidence that moved `finer_hypothesis_grid` from near-miss to production. Also carries `FORWARD_HYPOTHESIS.md`, written before the run. |
+| [`reachability_verification/`](reachability_verification/REPORT.md) | **Diagnostic — corrects a published number** | Re-measures `REACHABILITY_CAMPAIGN.md`'s "74% of failures are unreachable" on the frozen 156-pair benchmark instead of the campaign's 19 failures across two tuning surfaces. The true figure is **37.1%** (13 of 35), with pool recall **0.917** and selector efficiency **0.846** — the claim was roughly double the truth, and the tuning surfaces were unrepresentative. Establishes the 13 discovery / 22 selection split used throughout the reports, and shows the headroom is in selection among near-ties, not discovery. |

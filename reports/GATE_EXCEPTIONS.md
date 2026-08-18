@@ -1,8 +1,8 @@
 # Documented gate exceptions
 
 `reports/V2_ARCHITECTURE_PLAN.md` section 8 requires all 7 integration-gate criteria to pass
-before a candidate change is wired into `pipeline/`/`generator/`. Three changes have been integrated
-despite failing that literal bar: two on 2026-08-15, one on 2026-08-16. This file exists so that fact is never
+before a candidate change is wired into `pipeline/`/`generator/`. Four changes have been integrated
+despite failing that literal bar: two on 2026-08-15, one on 2026-08-16, one on 2026-08-17. This file exists so that fact is never
 buried — every future reader of the gate should be able to find exactly which changes are
 exceptions, why, and what evidence backed the decision, rather than assuming "in production"
 means "passed all 7 criteria."
@@ -62,6 +62,19 @@ requirements.
   A2's: real and safe, not proven to generalize broadly. Full derivation, including the 72-config
   sweep that ruled out `min_group_size=2` at every epsilon tried:
   `experiments/multiway_tiebreak_v1/REPORT.md`.
+
+  > **The cited rescue no longer holds on the current pipeline (noted 2026-08-18).** The
+  > 118.5px → 4.6px figure was measured on the pre-PSF benchmark, at A6's integration. On the
+  > current manifest `ch_worst_case_006` sits at **62.87px** — still a >50px catastrophic failure.
+  > Exception 3 (PSF-matched dual-arm candidate generation) changed the candidate pool for that
+  > pair, so the multiway tier no longer sees the tie it originally broke. This does **not**
+  > retract A6: the rescue was real when measured, the mechanism is unchanged, and criterion 5
+  > (no per-family regression) still holds on the current benchmark. But A6's single most-cited
+  > piece of supporting evidence is now historical, and its present-day contribution to pooled
+  > accuracy has not been re-measured in isolation. Anyone re-litigating A6 should re-run
+  > `experiments/multiway_tiebreak_v1/` against the current pipeline rather than quoting this
+  > number. Recorded here rather than quietly deleted, because the interaction between two
+  > separately-approved exceptions is exactly the kind of thing a gate is supposed to surface.
 - **Criteria that did pass**: 4 (no catastrophic increase), 5 (no per-family regression),
   6 (runtime — 1.01x, the change never touches candidate generation), 7 (same safe-but-narrow
   conclusion reproduced independently on the fresh dataset).
@@ -198,7 +211,8 @@ carries no accuracy risk, rather than assuming the bar was lowered again.
   held-back evaluation first.
 - **Practical effect on the demo**: at 0.92 the Streamlit app flagged 85–91% of results as
   ambiguous and `app/app.py`'s "not flagged ambiguous" success path almost never fired — a
-  77.6%-accurate system presenting as having no confidence in itself. At 0.990 it flags ~30%.
+  77.6%-accurate system presenting as having no confidence in itself. At 0.990 it flags **35.3%**
+  (55/156), matching the table above.
 
 ## What would revoke any of these exceptions
 
@@ -230,9 +244,9 @@ under the full gate.
   the same pattern, noted again rather than treated as settled precedent.
 
 - **2026-08-17: exception 4 (`AMBIGUITY_THRESHOLD` 0.92 → 0.990) integrated at the user's
-  direction**, following the six-experiment campaign consolidated in
-  `experiments/REACHABILITY_CAMPAIGN.md`. It was the only one of six investigations to produce a
-  positive, validated result; the other five are rejections and nothing from them was integrated.
+  direction**, following the eight-experiment campaign consolidated in
+  `experiments/REACHABILITY_CAMPAIGN.md`. It was the only one of eight investigations to produce a
+  positive, validated result; the other seven are rejections and nothing from them was integrated.
   In particular `experiments/anisotropic_psf/` was **deliberately not** integrated despite showing
   2 rescued / 0 broken and zero measured harm across 64 pairs — it had exactly zero effect on the
   independent 40-pair surface (sign test p = 0.25, against the p = 0.031 that exception 3 cleared),

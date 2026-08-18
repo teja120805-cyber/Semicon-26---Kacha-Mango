@@ -215,7 +215,7 @@ Both prior pool experiments moved the suppression radius **down** (4px); nobody 
 premise checks out — correlation-surface pitch is **median 14px against an 8px radius**, exceeding
 it on 21/24 pairs — but recall at equal k is **identical (0.8333) from radius 8 to 128**. The pool
 is already spatially diverse (median nearest-neighbour distance 16.4px at r=8) because diversity
-comes from the 81 hypotheses, not from within-hypothesis peak-picking, and `deduplicate_by_location`
+comes from the 99 hypotheses, not from within-hypothesis peak-picking, and `deduplicate_by_location`
 already collapses within 10px across the whole pool.
 
 ### 8. P5, Deformable Diversity Similarity → REJECT

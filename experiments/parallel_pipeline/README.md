@@ -24,8 +24,8 @@ Production code (`pipeline/`, `generator/`, `model/`) is imported unmodified and
 | id | idea | status |
 |---|---|---|
 | `zncc` | production baseline (null control) | reference |
-| `prewhiten` | P1 — spectral prewhitening, `1/(\|F\|²+λ)^ρ` | implemented |
-| `notch` | P2 — targeted lattice-harmonic notching | implemented |
+| `prewhiten` | P1 — spectral prewhitening, `1/(\|F\|²+λ)^ρ` | implemented — **REJECTED** |
+| `notch` | P2 — targeted lattice-harmonic notching | implemented — **REJECTED** |
 
 `psr` (peak-to-sidelobe ratio) is computed alongside every backend as a candidate confidence
 metric — P4 in the survey — rather than being a backend itself.

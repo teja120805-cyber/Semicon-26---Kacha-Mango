@@ -5,17 +5,25 @@
 > `experiments/psf_gated_selection/REPORT.md`), which corrected a ~16x sharpness mismatch between
 > the correlation template and the Search image. Any pooled-accuracy figure below that predates
 > that change is historical.
+>
+> **This applies to the whole error distribution, not just pooled accuracy** (clarified
+> 2026-08-17): the median, mean, P90, P95 and >10px/>50px failure rates quoted in "Frozen benchmark"
+> below are also pre-change figures. Current production values are median **0.3222px**, mean
+> **47.729px**, P90 **69.85px**, P95 **433.76px**, >10px **21.15%**, >50px **14.10%** (22/156).
 
-Summary of the full audit-through-experiment pass over DriftSense V2. Detail lives in the other
-three `reports/` documents and each `experiments/<name>/REPORT.md`; this ties them together.
+Summary of the full audit-through-experiment pass over DriftSense V2. Detail lives in the other 12
+of the 13 `reports/` documents and each `experiments/<name>/REPORT.md`; this ties them together.
 
 ## Frozen benchmark
 
 `data/` (`generator_version=driftsensev2.1.0`, seed `777001`; development=24, validation=40,
-held_out=40, challenge=32, cross_generator=20, n=156). Classical baseline (production):
-**68.6%@5px pooled**, median error 0.34px, mean 65.3px (bimodal — usually near-exact, sometimes a
-full wrong-location miss), P90 226.7px, P95 498.8px, failure rate >10px = 29.5%, >50px = 18.6%.
-Full breakdown: `reports/V2_BASELINE_REPORT.md`.
+held_out=40, challenge=32, cross_generator=20, n=156). Classical baseline as measured before the
+2026-08-16 PSF-matched change: **68.6%@5px pooled**, median error 0.34px, mean 65.3px (bimodal —
+usually near-exact, sometimes a full wrong-location miss), P90 226.7px, P95 498.8px, failure rate
+>10px = 29.5%, >50px = 18.6%. *(Historical — every figure in this paragraph is superseded. Current
+production: **77.6%@5px**, median **0.3222px**, mean **47.729px**, P90 **69.85px**, P95
+**433.76px**, >10px **21.15%**, >50px **14.10%**.)* Full breakdown:
+`reports/V2_BASELINE_REPORT.md`.
 
 This number is a *correction* of an earlier run (67.3%@5px) that carried a real cross-split
 instance-leakage bug in the dataset's RNG seeding — found in the Phase 2 audit
@@ -59,8 +67,12 @@ with one. *(Corrected 2026-08-17: this passage previously read "31 candidate gen
 ranking / 7 genuine ambiguity", which sums to 49 failures and belongs to the superseded 74.36% run;
 and it quoted 3.4% as the boundary failure rate, which is in fact the boundary **catastrophic**
 >50px rate, not failure@5px. The 41.2% non-boundary figure is correct.)* Visual analysis of the
-10 worst failures (`outputs/visualizations/catastrophic_failures/`) sharpens this further: **9 of 10
-have high periodicity, and 7 of 10 have zero rotation/scale drift at all** — the catastrophic tail
+10 worst failures (`outputs/visualizations/catastrophic_failures/` — not in the repository;
+produced by `scripts/visualize_catastrophic_failures.py`, which needs
+`outputs/reports/baseline_failure_decomposition.csv` from `scripts/decompose_baseline_failures.py`)
+sharpens this further: **6 of 10
+have high periodicity (`periodicity_score` >= 0.64, 5 of 10 at the maximum 1.0), and 4 of 10 have
+zero rotation *and* scale drift at all** *(recomputed 2026-08-17; previously 9 of 10 and 7 of 10)* — the catastrophic tail
 specifically is a periodicity story, not primarily a rotation/scale one, because a periodicity
 failure can jump to a wrong repeat arbitrarily far away while a grid-misalignment failure is
 typically a wrong-but-nearby location.
@@ -134,14 +146,20 @@ experiment has been attempted this round.
 
 ## What would be worth doing next, if this continues
 
-1. Revisit `finer_hypothesis_grid` with a larger or less ceiling-limited validation set — it is one
-   criterion away from a genuine pass, and remains the single most promising result of six
-   experiments tested.
+1. `finer_hypothesis_grid` has since been revisited on a larger validation surface
+   (`experiments/finer_grid_validation/`) and **integrated on 2026-08-15** — it was the most
+   promising result of the experiments tested at the time this list was written, and it is now
+   production. What remains open is the same question one level down: whether an even finer or
+   adaptively-placed hypothesis grid buys anything beyond the current 11 x 9 = 99.
 2. A properly-scoped, adequately-sized experiment targeting periodicity specifically: a re-ranking
    stage over a wider shortlist (the architecture shape `wider_candidate_pool` showed is necessary,
    combined with the training-data-scale fix `embedding_reranker_v1`'s rejection already diagnosed,
    and now further motivated by `periodicity`'s finding that classical scoring alternatives don't
    help). This should use the bounded `development` expansion from `reports/DATASET_AUDIT.md` section
    5 before training anything, not the current 24-pair split.
-3. Neither is required — production remains a defensible, fully-understood classical baseline, and
-   "no experiment integrated" is an honest, disciplined outcome given what was actually tested.
+3. Neither is required — production remains a defensible, fully-understood classical baseline.
+   Of the 42 experiment directories on disk, **5 reached production** (4 of them as documented gate
+   exceptions, `reports/GATE_EXCEPTIONS.md`); the large majority were rejected against the gate and
+   are recorded as rejections. A high rejection rate against a gate that was actually enforced — and
+   4 exceptions that are logged rather than buried — is the honest, disciplined outcome here, not a
+   claim that nothing shipped.
