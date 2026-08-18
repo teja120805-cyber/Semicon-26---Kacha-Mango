@@ -77,11 +77,23 @@ coordinates are continuous rather than quantised to the search grid.
 around the `localize()` call only (`pipeline/localize.py`). It covers candidate generation,
 scoring, ranking and sub-pixel refinement, and **excludes** image file I/O and dataset generation.
 Execution is single-process CPU — no GPU is used anywhere in the production path, and no code in
-`pipeline/` spawns threads or subprocesses. The 3.72 s/pair above was measured on the development
-workstation (Windows, x64); the identical benchmark takes 6.08 s/pair on a 2-core Linux container,
-so treat the ratio rather than the absolute as portable. Exact host CPU, OS build, Python and
-library versions for any machine are printed by `python scripts/report_environment.py`, and by the
-Streamlit app's **System Information** screen.
+`pipeline/` spawns threads or subprocesses.
+
+The 3.72 s/pair figure was measured on:
+
+| | |
+|---|---|
+| OS | Windows 11 (10.0.26200), AMD64 / 64-bit |
+| CPU | Intel64 Family 6 Model 183 Stepping 1 (Raptor Lake), 24 logical cores |
+| Python | 3.14.6 (CPython) |
+| OpenCV | 5.0.0 (`opencv-python-headless==5.0.0.93`, pinned — see Reproducibility) |
+| NumPy / SciPy / pandas | 2.5.1 / 1.18.0 / 3.0.5 |
+| GPU | none used; `torch 2.13.0+cpu`, CUDA unavailable |
+
+Only one core is used, so the 24-core count sets no expectation of parallel speed-up. The identical
+benchmark takes 6.08 s/pair on a 2-core Linux container, so treat the ratio rather than the
+absolute as portable. `python scripts/report_environment.py` prints this block for any machine, as
+does the Streamlit app's **System Information** screen.
 
 **Selective prediction.** Every result carries an `ambiguous` flag derived from the candidate
 pool's own score distribution. Withholding flagged results trades coverage for reliability:
@@ -385,8 +397,14 @@ classical. Full analysis: `reports/V2_MODEL_EVALUATION_REPORT.md`.
 ## Documentation
 
 Deep dives live in `reports/`; the table below is a map, not a substitute for reading them.
-Every candidate change ever evaluated — integrated or rejected — keeps its own `REPORT.md` under
-`experiments/<name>/`, including the ones that failed and why.
+Every candidate change ever evaluated — integrated or rejected — keeps its own written report,
+including the ones that failed and why. **42 experiment directories, 5 of which reached
+production.** All but two carry a `REPORT.md` in the directory itself: `accuracy_forensics/`
+predates that convention and is written up as `reports/ACCURACY_FORENSICS.md`, and
+`finer_grid_validation/` splits into `FORWARD_HYPOTHESIS.md` and `INTEGRATION_RECOMMENDATION.md`
+because the pre-registration and the verdict were written at different times. The Streamlit app's
+**Experiment Results** screen renders the whole ledger live from disk, so it cannot drift from
+what is actually here.
 
 | Report | What it covers |
 |---|---|
