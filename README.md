@@ -180,6 +180,9 @@ under `experiments/<name>/` and only integrated into production if they clear a 
 Drift-Sense/
 ├── README.md
 ├── requirements.txt
+├── generate_dataset.py   # root entry point -> scripts/generate_dataset.py
+├── localize.py           # root entry point -> scripts/localize_pair.py
+├── Kaccha Mango_PS02.pptx
 ├── .gitignore
 │
 ├── generator/    # synthetic DRAM macro-structure dataset generator
@@ -190,9 +193,22 @@ Drift-Sense/
 ├── scripts/      # CLI entry points (generate / evaluate / train / localize_pair / run_demo)
 ├── experiments/  # isolated candidate improvements, each with its own REPORT.md
 ├── reports/      # audit, benchmark, and design-decision reports (see Documentation)
-├── data/         # generated dataset (gitignored - regenerate via scripts/generate_dataset.py)
-└── outputs/      # generated plots/metrics (gitignored - regenerate via scripts/evaluate_model.py)
+├── references/   # bibliography + mechanism-to-code-to-source map (BibTeX included)
+├── external/     # imported cross-generator evaluation surface (see section 3)
+├── data/         # generated dataset (gitignored - regenerate via generate_dataset.py)
+└── outputs/      # RESULTS: the 8 plots, metrics JSONs and the per-pair manifest (tracked)
 ```
+
+**Mapping to the help document's recommended layout.** That document suggests
+`generate_dataset.py`, `localize.py`, `configs/`, `src/`, `model/`, `results/` and `references/`.
+The equivalents here: `generate_dataset.py` and `localize.py` are at the root as recommended;
+`src/` is split into the four purposeful packages `generator/`, `pipeline/`, `evaluation/` and
+`app/` rather than one bag; `model/` and `references/` match; **`results/` is `outputs/`** — the
+eight required plots, `baseline_metrics.json` and the per-pair CSV/JSON manifest are committed
+there, so a fresh clone has the results without regenerating anything. There is no `configs/`:
+every tunable is a documented module-level constant next to the code that reads it (for example
+`pipeline/localize.py::AMBIGUITY_THRESHOLD`, `generator/dataset_generator.py::DEFAULT_PARAMS`),
+which keeps a value and its justification in one place instead of two.
 
 ---
 
@@ -400,16 +416,49 @@ Two consolidated experiment campaigns sit alongside these, in `experiments/`:
 
 ## References
 
-- Foi, Trimeche, Katkovnik & Egiazarian (2008), *"Practical Poisson-Gaussian Noise Modeling and
-  Fitting for Single-Image Raw-Data"* — basis for the Poisson shot-noise / detector read-noise model.
-- Orji et al. (2018), *"Metrology for the next generation of semiconductor devices"*, **Nature
-  Electronics** — basis for the per-line position-jitter (cumulative random walk) model.
-- Applied Materials' official starter resource, *Drift-Sense Synthetic Data* (Hugging Face) — read
-  as a reference for degradation coverage only; its code is never imported or executed, only its
-  already-generated output images are used as an external evaluation surface.
+**Full bibliography: [`references/`](references/README.md)** — every entry carries a DOI, stable URL
+or ISBN, and is mapped to the file and function that implements it, so a claim can be traced from
+the README to the code to the paper. [`references/BIBLIOGRAPHY.bib`](references/BIBLIOGRAPHY.bib)
+has the same entries as BibTeX.
 
-Full 22-mechanism citation table, mapping every implemented degradation to its physical motivation
-and source: `reports/DEGRADATION_COVERAGE.md`.
+The load-bearing ones:
+
+- **Keeth, Baker, Johnson & Lin (2007)**, *DRAM Circuit Design: Fundamental and High-Speed Topics*,
+  2nd ed., Wiley-IEEE Press, ISBN 978-0-470-18475-2 — the mat/periphery split this generator tiles.
+  Corroborated by **Vogelsang (2010)**, MICRO-43, [10.1109/MICRO.2010.42](https://doi.org/10.1109/MICRO.2010.42),
+  which states the geometry directly and is freely readable: each sub-array has bitline sense
+  amplifiers and local wordline drivers surrounding it.
+- **Reimer (1998)**, *Scanning Electron Microscopy: Physics of Image Formation and Microanalysis*,
+  2nd ed., [10.1007/978-3-540-38967-5](https://doi.org/10.1007/978-3-540-38967-5) — probe-forming
+  optics, spot size and astigmatism, behind the PSF blur model.
+- **Foi, Trimeche, Katkovnik & Egiazarian (2008)**, *IEEE TIP* 17(10),
+  [10.1109/TIP.2008.2001399](https://doi.org/10.1109/TIP.2008.2001399) — the Poissonian-Gaussian
+  composite behind the shot-noise / read-noise pair. SEM-specific counterpart: **Timischl, Date &
+  Nemoto (2012)**, *Scanning* 34(3), [10.1002/sca.20282](https://doi.org/10.1002/sca.20282).
+- **Sutton et al. (2006)**, *Meas. Sci. Technol.* 17(10),
+  [10.1088/0957-0233/17/10/012](https://doi.org/10.1088/0957-0233/17/10/012) — separates fixed
+  *spatial distortion* from time-varying *drift distortion* in a scanned image. That separation is
+  why barrel/pincushion and shear/jitter are modelled as distinct terms rather than one blur.
+- **Tanaka, Morigami & Atoda (1993)**, *Jpn. J. Appl. Phys.* 32(12S),
+  [10.1143/JJAP.32.6059](https://doi.org/10.1143/JJAP.32.6059) — capillary-force resist collapse,
+  the reason pattern collapse is a *spacing threshold* and bridges only interior gaps.
+- **Orji et al. (2018)**, *Nature Electronics* 1(10),
+  [10.1038/s41928-018-0150-9](https://doi.org/10.1038/s41928-018-0150-9) — CD, linewidth roughness
+  and pattern-placement metrology, behind the per-line width and position jitter.
+- **Lewis (1995)**, *Fast Normalized Cross-Correlation*, Vision Interface — the production score
+  itself. DOI-bearing companion: **Briechle & Hanebeck (2001)**,
+  [10.1117/12.421129](https://doi.org/10.1117/12.421129).
+
+*Not a citation, listed for provenance:* Applied Materials' official starter resource,
+*Drift-Sense Synthetic Data* (Hugging Face) — the hackathon's own starter kit, read as a coverage
+reference only. Its code is never imported or executed; only its already-generated output images
+are used, as an external evaluation surface.
+
+**Honest coverage statement.** `reports/DEGRADATION_COVERAGE.md` audits 22 implemented mechanisms.
+14 have a source that treats that exact mechanism; 6 are standard engineering models with no single
+canonical citation, anchored instead to the textbook chapter covering their class; 2 are not
+physical degradations at all. That breakdown is stated per-row rather than papered over — a
+"citation" reading *Standard radial falloff model* is labelled as such.
 
 ---
 

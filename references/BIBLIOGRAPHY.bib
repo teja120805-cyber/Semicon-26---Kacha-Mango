@@ -1,0 +1,284 @@
+% Drift-Sense - bibliography
+% SEMICON India Hackathon 2026, Applied Materials problem statement.
+% Team Kaccha Mango.
+%
+% Same entries as references/README.md, which additionally maps each one to the
+% code that implements the mechanism it supports. Every DOI here resolves
+% through Crossref and every ISBN was checked against the publisher's catalogue.
+% Nothing that could not be verified is listed.
+
+% ---------------------------------------------------------------------------
+% 1. Semiconductor structure - DRAM array, mat and strip organisation
+% ---------------------------------------------------------------------------
+
+@book{keeth2007dram,
+  author    = {Keeth, Brent and Baker, R. Jacob and Johnson, Brian and Lin, Feng},
+  title     = {{DRAM} Circuit Design: Fundamental and High-Speed Topics},
+  edition   = {2nd},
+  publisher = {Wiley-IEEE Press},
+  series    = {IEEE Press Series on Microelectronic Systems},
+  year      = {2007},
+  isbn      = {978-0-470-18475-2},
+  note      = {Ch. 2 The DRAM Array; Ch. 3 Array Architectures; Ch. 4 The Peripheral Circuitry}
+}
+
+@inproceedings{vogelsang2010dram,
+  author    = {Vogelsang, Thomas},
+  title     = {Understanding the Energy Consumption of Dynamic Random Access Memories},
+  booktitle = {2010 43rd Annual IEEE/ACM International Symposium on Microarchitecture (MICRO-43)},
+  pages     = {363--374},
+  year      = {2010},
+  doi       = {10.1109/MICRO.2010.42}
+}
+
+@inproceedings{kim2012salp,
+  author    = {Kim, Yoongu and Seshadri, Vivek and Lee, Donghyuk and Liu, Jamie and Mutlu, Onur},
+  title     = {A case for exploiting subarray-level parallelism ({SALP}) in {DRAM}},
+  booktitle = {Proc. 39th International Symposium on Computer Architecture (ISCA)},
+  pages     = {368--379},
+  year      = {2012},
+  doi       = {10.1145/2366231.2337202}
+}
+
+@article{itoh1990trends,
+  author  = {Itoh, Kiyoo},
+  title   = {Trends in megabit {DRAM} circuit design},
+  journal = {IEEE Journal of Solid-State Circuits},
+  volume  = {25},
+  number  = {3},
+  pages   = {778--789},
+  year    = {1990},
+  doi     = {10.1109/4.102676}
+}
+
+@book{itoh2001vlsi,
+  author    = {Itoh, Kiyoo},
+  title     = {{VLSI} Memory Chip Design},
+  publisher = {Springer},
+  series    = {Springer Series in Advanced Microelectronics},
+  volume    = {5},
+  year      = {2001},
+  isbn      = {978-3-540-67820-5},
+  doi       = {10.1007/978-3-662-04478-0},
+  note      = {Ch. 3 DRAM Circuits}
+}
+
+% ---------------------------------------------------------------------------
+% 2. SEM image formation
+% ---------------------------------------------------------------------------
+
+@book{reimer1998sem,
+  author    = {Reimer, Ludwig},
+  title     = {Scanning Electron Microscopy: Physics of Image Formation and Microanalysis},
+  edition   = {2nd},
+  publisher = {Springer},
+  series    = {Springer Series in Optical Sciences},
+  volume    = {45},
+  year      = {1998},
+  isbn      = {978-3-540-63976-3},
+  doi       = {10.1007/978-3-540-38967-5}
+}
+
+@book{goldstein2018sem,
+  author    = {Goldstein, Joseph I. and Newbury, Dale E. and Michael, Joseph R. and
+               Ritchie, Nicholas W. M. and Scott, John Henry J. and Joy, David C.},
+  title     = {Scanning Electron Microscopy and X-Ray Microanalysis},
+  edition   = {4th},
+  publisher = {Springer},
+  year      = {2018},
+  isbn      = {978-1-4939-6674-5},
+  doi       = {10.1007/978-1-4939-6676-9},
+  note      = {Ch. 8 The Visibility of Features in SEM Images; Ch. 9 Image Defects}
+}
+
+@article{postek2011modeling,
+  author  = {Postek, Michael T. and Vlad{\'a}r, Andr{\'a}s E.},
+  title   = {Modeling for accurate dimensional scanning electron microscope metrology: then and now},
+  journal = {Scanning},
+  volume  = {33},
+  number  = {3},
+  pages   = {111--125},
+  year    = {2011},
+  doi     = {10.1002/sca.20238},
+  note    = {Open full text (US Government work):
+             https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=908153}
+}
+
+@article{villarrubia2015jmonsel,
+  author  = {Villarrubia, J. S. and Vlad{\'a}r, A. E. and Ming, B. and Kline, R. J. and
+             Sunday, D. F. and Chawla, J. S. and List, S.},
+  title   = {Scanning electron microscope measurement of width and shape of 10\,nm patterned
+             lines using a {JMONSEL}-modeled library},
+  journal = {Ultramicroscopy},
+  volume  = {154},
+  pages   = {15--28},
+  year    = {2015},
+  doi     = {10.1016/j.ultramic.2015.01.004}
+}
+
+% ---------------------------------------------------------------------------
+% 3. Noise
+% ---------------------------------------------------------------------------
+
+@article{foi2008poissonian,
+  author  = {Foi, Alessandro and Trimeche, Mejdi and Katkovnik, Vladimir and Egiazarian, Karen},
+  title   = {Practical {Poissonian}-{Gaussian} Noise Modeling and Fitting for Single-Image Raw-Data},
+  journal = {IEEE Transactions on Image Processing},
+  volume  = {17},
+  number  = {10},
+  pages   = {1737--1754},
+  year    = {2008},
+  doi     = {10.1109/TIP.2008.2001399}
+}
+
+@article{timischl2012signalnoise,
+  author  = {Timischl, F. and Date, M. and Nemoto, S.},
+  title   = {A statistical model of signal--noise in scanning electron microscopy},
+  journal = {Scanning},
+  volume  = {34},
+  number  = {3},
+  pages   = {137--144},
+  year    = {2012},
+  doi     = {10.1002/sca.20282},
+  note    = {Published online 2011}
+}
+
+% ---------------------------------------------------------------------------
+% 4. Scan artifacts - drift, jitter, shear, scan nonlinearity, charging
+% ---------------------------------------------------------------------------
+
+@article{sutton2006metrology,
+  author  = {Sutton, M. A. and Li, N. and Garcia, D. and Cornille, N. and Orteu, J. J. and
+             McNeill, S. R. and Schreier, H. W. and Li, X.},
+  title   = {Metrology in a scanning electron microscope: theoretical developments and
+             experimental validation},
+  journal = {Measurement Science and Technology},
+  volume  = {17},
+  number  = {10},
+  pages   = {2613--2622},
+  year    = {2006},
+  doi     = {10.1088/0957-0233/17/10/012}
+}
+
+@article{sutton2007sem,
+  author  = {Sutton, M. A. and Li, N. and Joy, D. C. and Reynolds, A. P. and Li, X.},
+  title   = {Scanning Electron Microscopy for Quantitative Small and Large Deformation
+             Measurements Part {I}: {SEM} Imaging at Magnifications from 200 to 10,000},
+  journal = {Experimental Mechanics},
+  volume  = {47},
+  number  = {6},
+  pages   = {775--787},
+  year    = {2007},
+  doi     = {10.1007/s11340-007-9042-z}
+}
+
+@article{jin2015drift,
+  author  = {Jin, P. and Li, X.},
+  title   = {Correction of image drift and distortion in a scanning electron microscopy},
+  journal = {Journal of Microscopy},
+  volume  = {260},
+  number  = {3},
+  pages   = {268--280},
+  year    = {2015},
+  doi     = {10.1111/jmi.12293}
+}
+
+@article{cazaux2004charging,
+  author  = {Cazaux, Jacques},
+  title   = {Charging in scanning electron microscopy ``from inside and outside''},
+  journal = {Scanning},
+  volume  = {26},
+  number  = {4},
+  pages   = {181--203},
+  year    = {2004},
+  doi     = {10.1002/sca.4950260406}
+}
+
+% ---------------------------------------------------------------------------
+% 5. Lithography and etch effects
+% ---------------------------------------------------------------------------
+
+@article{orji2018metrology,
+  author  = {Orji, Ndubuisi G. and Badaroglu, Mustafa and Barnes, Bryan M. and Beitia, Carlos and
+             Bunday, Benjamin D. and Celano, Umberto and Kline, R. Joseph and Neisser, Mark and
+             Obeng, Yaw and Vlad{\'a}r, A. E.},
+  title   = {Metrology for the next generation of semiconductor devices},
+  journal = {Nature Electronics},
+  volume  = {1},
+  number  = {10},
+  pages   = {532--547},
+  year    = {2018},
+  doi     = {10.1038/s41928-018-0150-9}
+}
+
+@article{tanaka1993collapse,
+  author  = {Tanaka, Takumi and Morigami, Mitsuru and Atoda, Nobufumi},
+  title   = {Mechanism of Resist Pattern Collapse during Development Process},
+  journal = {Japanese Journal of Applied Physics},
+  volume  = {32},
+  number  = {12S},
+  pages   = {6059},
+  year    = {1993},
+  doi     = {10.1143/JJAP.32.6059}
+}
+
+@misc{mack2006collapse,
+  author       = {Mack, Chris A.},
+  title        = {Pattern Collapse},
+  howpublished = {The Lithography Expert, November 2006},
+  year         = {2006},
+  url          = {https://www.lithoguru.com/scientist/litho_tutor/Tutor55\%20(Nov\%2006).pdf}
+}
+
+@book{mack2007litho,
+  author    = {Mack, Chris A.},
+  title     = {Fundamental Principles of Optical Lithography: The Science of Microfabrication},
+  publisher = {John Wiley \& Sons},
+  year      = {2007},
+  isbn      = {978-0-470-01893-4}
+}
+
+% ---------------------------------------------------------------------------
+% 6. Matching method (production pipeline)
+% ---------------------------------------------------------------------------
+
+@inproceedings{lewis1995ncc,
+  author    = {Lewis, J. P.},
+  title     = {Fast Normalized Cross-Correlation},
+  booktitle = {Vision Interface},
+  pages     = {120--123},
+  year      = {1995},
+  note      = {Vision Interface proceedings predate DOI assignment; author's hosted copy:
+               https://scribblethink.org/Work/nvisionInterface/nip.pdf}
+}
+
+@inproceedings{briechle2001template,
+  author    = {Briechle, Kai and Hanebeck, Uwe D.},
+  title     = {Template matching using fast normalized cross correlation},
+  booktitle = {Proc. SPIE 4387, Optical Pattern Recognition XII},
+  pages     = {95--102},
+  year      = {2001},
+  doi       = {10.1117/12.421129}
+}
+
+@inproceedings{steger2001similarity,
+  author    = {Steger, Carsten},
+  title     = {Similarity Measures for Occlusion, Clutter, and Illumination Invariant
+               Object Recognition},
+  booktitle = {Pattern Recognition (DAGM 2001)},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {2191},
+  pages     = {148--154},
+  publisher = {Springer},
+  year      = {2001},
+  doi       = {10.1007/3-540-45404-7_20}
+}
+
+@book{gonzalez2018dip,
+  author    = {Gonzalez, Rafael C. and Woods, Richard E.},
+  title     = {Digital Image Processing},
+  edition   = {4th},
+  publisher = {Pearson},
+  year      = {2018},
+  isbn      = {978-0-13-335672-4}
+}

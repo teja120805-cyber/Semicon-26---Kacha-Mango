@@ -25,13 +25,15 @@ def rank_classical(candidates: list[Candidate]) -> list[Candidate]:
 
 # Two candidate scores are "the same value" (not merely close) up to
 # float32 ZNCC computation noise. Deliberately NOT the pipeline's existing
-# AMBIGUITY_THRESHOLD (0.92 second-best/best ratio, in localize.py): that
+# AMBIGUITY_THRESHOLD (second-best/best ratio, in localize.py): that
 # threshold was designed to flag a result as worth reporting as uncertain,
 # not to declare two different locations interchangeable as the final
 # answer. Empirically, reusing it here (checked against the development
-# split before settling on this constant) treats the large majority of
-# pairs as "tied" - collapsing pooled accuracy@5px from 71.2% to 33.3% on
-# the frozen benchmark - because ZNCC scores decay gradually across
+# split before settling on this constant, when AMBIGUITY_THRESHOLD was
+# still 0.92; it was later recalibrated to 0.990 - see gate exception 4)
+# treats the large majority of pairs as "tied" - collapsing pooled
+# accuracy@5px from 71.2% to 33.3% on the frozen benchmark of the day -
+# because ZNCC scores decay gradually across
 # distinct wrong-location candidates, not just between true near-ties.
 # The smallest real gap observed between genuinely distinct top-2
 # candidates on the development split was ~4e-4, three orders of
