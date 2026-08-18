@@ -1,13 +1,14 @@
-# experiments/gated_escalation — the strongest lead the project has found, and still NOT integrable: INTERIM
+# experiments/gated_escalation — the strongest lead the project has found, and still NOT integrable: REJECT
 
-**Date:** 2026-08-17. **Production is unchanged at 77.6%@5px.** `pipeline/`, `generator/` and
+**Date:** 2026-08-17; validation sweep completed 2026-08-18. **Production is unchanged at 77.6%@5px.** `pipeline/`, `generator/` and
 `model/` untouched.
 
-> **STATUS: INTERIM. NOT INTEGRATED. NOT VALIDATED.**
-> The settled recommendation in `experiments/BATCH_2026-08-17_REPORT.md` (Addendum 2) is **DO NOT
-> INTEGRATE**, for both variants. The extended production-family validation sweep that would decide
-> the question is **incomplete at the time of writing** — three of five seeds finished, two still
-> running. Nothing in this report should be read as a shipped or shippable result. See §6.
+> **STATUS: REJECTED. NOT INTEGRATED.**
+> The five-seed production-family validation sweep is now **complete** (§6). Pooled, the effect is
+> real — 29 rescued / 10 broken, sign test p = 0.0017. It is still not integrable: **no seed passes
+> the 7-criterion gate**, criterion 7 (cross-seed stability) fails on all five, criterion 5
+> (per-family regression) on four, and criterion 6 (runtime) on two. One seed in five regresses
+> outright. A change whose sign depends on the draw cannot ship, however good its mean.
 
 Consolidated findings: `BATCH_2026-08-17_REPORT.md` §A, Addendum, and Addendum 2.
 
@@ -171,9 +172,9 @@ Five seeds are defined in `make_production_family_data.py`: `prodfam_a` (883021)
 |---|---:|---:|---:|---:|---:|---:|---|---|
 | `prodfam_a` (seed 883021) | 136 | 0.7279 | 0.7132 | **−1.47pp** | 2 | 4 | 0.169 → 0.162 | complete |
 | `prodfam_b` (seed 517664) | 136 | 0.7132 | 0.7794 | **+6.62pp** | 10 | 1 | 0.177 → 0.118 | complete |
-| `prodfam_c` (seed 240719) | — | — | — | **+3.68pp** | 7 | 2 | — | complete (interim) |
-| `prodfam_d` (seed 661438) | — | — | — | — | — | — | — | **still running** |
-| `prodfam_e` (seed 105293) | — | — | — | — | — | — | — | **still running** |
+| `prodfam_c` (seed 240719) | 136 | 0.7647 | 0.8015 | **+3.68pp** | 7 | 2 | 0.191 → 0.140 | complete |
+| `prodfam_d` (seed 661438) | 136 | 0.7500 | 0.7500 | **+0.00pp** | 1 | 1 | 0.110 → 0.118 | complete |
+| `prodfam_e` (seed 105293) | 136 | 0.7132 | 0.7647 | **+5.15pp** | 9 | 2 | 0.169 → 0.169 | complete |
 | frozen benchmark | 156 | 0.7756 | 0.8013 | +2.56pp | 5 | 1 | 0.141 → 0.154 | complete |
 
 **What is settled, from the two seeds in the batch report.** The two seeds **disagree in sign**. One
@@ -195,16 +196,45 @@ This is the pattern the project has seen before: `pitch_aware_prominence` (#8 in
 validation**, with #9 then showing the apparent gain was an artifact. Gate criterion 7 exists for
 this, and it worked.
 
-**What is interim.** `prodfam_c` has since completed at **+3.68pp, 7 rescued / 2 broken** — positive,
-consistent with `prodfam_b` in sign. Its accuracy, catastrophic-rate and per-family breakdown are
-not yet consolidated into the batch report, and are not quoted here rather than guessed. Simple
-arithmetic on the stated counts gives **19 rescued / 7 broken across the three completed seeds**
-(12/5 from a+b, plus 7/2). **No significance test is recomputed on that tally**: two of five seeds
-are outstanding, and computing a p-value now, then again after `prodfam_d` and `prodfam_e` land,
-would be optional-stopping — the exact error criterion 7 exists to catch.
+### The completed sweep — all five seeds (2026-08-18)
 
-**`prodfam_d` and `prodfam_e` were still running at the time of writing.** The sweep is incomplete
-and no conclusion is drawn from it.
+`prodfam_c`, `prodfam_d` and `prodfam_e` have since finished. The table above is now complete, and
+the pre-registered tally can be read once, at the end, as intended:
+
+| | |
+|---|---|
+| Pooled rescued / broken | **29 / 10** (n = 39) |
+| Sign test, one-tailed | **p = 0.0017** |
+| Mean Δ across seeds | **+2.79pp** (range −1.47 to +6.62) |
+| Seeds improving / flat / regressing | **3 / 1 / 1** |
+| Seeds passing the 7-criterion gate | **0 of 5** (best: `prodfam_b`, 5/7) |
+
+**The tally is significant and the change is still not integrable.** Those are not in tension, and
+the distinction is the whole point of the gate. A one-tailed p of 0.0017 says the effect is real in
+expectation. It says nothing about whether any *particular* deployment gets it — and the per-seed
+picture is that one draw in five regresses, one is flat, and no draw anywhere in the sweep clears
+all seven criteria.
+
+The failures are systematic rather than marginal:
+
+- **Criterion 7 (stable across seeds) fails on all five.** The spread is −1.47pp to +6.62pp across
+  draws of the *same generator*. That is the property the criterion was written to catch.
+- **Criterion 5 (no per-family regression) fails on four of five.** Not one unlucky family on one
+  unlucky seed — a recurring pattern.
+- **Criterion 6 (runtime) fails on two of five** (`prodfam_a` 4.47×, `prodfam_e`), against a 5×
+  ceiling, because the flag rate that drives escalation varies by draw: 61 of 136 flagged on
+  `prodfam_a` versus 47 of 136 on `prodfam_b`.
+- **Criterion 3 (cross-generator) fails on all five for a known, disclosed artifact** — the
+  production-family datasets have no `cross_generator` analogue, so the gate reads the absent split
+  as False. That one is not evidence against the change; it is documented in
+  `make_production_family_data.py` and in gate exception 2.
+- `prodfam_d` also **worsened the catastrophic rate** (0.110 → 0.118) while gaining nothing.
+
+**On the statistics, honestly.** The five seeds were pre-registered in
+`make_production_family_data.py` before any of them ran, and the sign test is computed once, on the
+completed set — not peeked at as seeds landed. The interim tally recorded here earlier (19/7 after
+three seeds) was deliberately left without a p-value for exactly that reason. Nothing about the
+final p-value changes the verdict, because the verdict never rested on the mean.
 
 **Runtime — criterion 6 also failed once.** On `prodfam_a` criterion 6 **FAILED**, with the
 dataset-level multiplier at **4.47×**. The margin under the 5× ceiling is thinner than the frozen
@@ -222,14 +252,19 @@ alongside criterion 7, and it was not visible on the frozen benchmark.
 - **Decisiveness-gated escalation: rejected on the evidence available.** The closest any change has
   come (+2.56pp frozen, 5/1), but criterion 7 fails for real — one of two properly-matched
   validation seeds regresses.
-- **Validation sweep incomplete:** `prodfam_a`, `prodfam_b`, `prodfam_c` complete; `prodfam_d` and
-  `prodfam_e` still running. The extra seeds may narrow the variance estimate; they cannot retire
-  the sign disagreement already observed on `prodfam_a`.
-- **Criterion 6 is a second live blocker** (`prodfam_a`, 4.47×), driven by draw-to-draw variation in
-  the flag rate.
+- **Validation sweep complete (2026-08-18):** all five production-family seeds finished. Pooled
+  **29 rescued / 10 broken, p = 0.0017**, mean **+2.79pp** — and **0 of 5 seeds pass the gate**
+  (best `prodfam_b`, 5/7). The extra seeds narrowed the variance estimate and did not retire the
+  sign disagreement: `prodfam_a` still regresses −1.47pp and `prodfam_d` is flat.
+- **Criterion 6 is a second live blocker** (`prodfam_a` 4.47×, `prodfam_e` also failing), driven by
+  draw-to-draw variation in the flag rate.
+- **Criterion 5 fails on four of five seeds** — per-family regression is the recurring failure, not
+  an unlucky draw.
 - **What would change the verdict:** consistent sign across all five production-family seeds, plus
-  a runtime margin that holds when the flag rate runs high. Anything less leaves a change whose sign
-  depends on the draw, which cannot ship.
+  a runtime margin that holds when the flag rate runs high. The completed sweep delivered neither —
+  3 improve, 1 flat, 1 regresses — so the verdict is settled at REJECT rather than left open.
+  Reviving this needs a cheaper escalation trigger (the runtime blocker) and a mechanism for the
+  per-family regressions, not more seeds.
 
 ## 8. What survives regardless of the verdict
 

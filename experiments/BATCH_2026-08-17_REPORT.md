@@ -312,6 +312,11 @@ composition the change would actually face, which the earlier three surfaces wer
 `val_same_preset_boundary` 0.900 → 0.800); the other gains 6.6pp with the catastrophic rate
 *improving* and 5 of 7 gate criteria passing.
 
+> **Superseded 2026-08-18:** the full five-seed sweep has since completed — pooled **29 rescued /
+> 10 broken, p = 0.0017**, mean **+2.79pp**, and **0 of 5 seeds pass the gate**. The two-seed
+> figures below are kept as the record of what was known at the time. See
+> `gated_escalation/REPORT.md` §6. The verdict is unchanged: DO NOT INTEGRATE.
+
 Combined: **12 rescued / 5 broken**, sign test one-tailed **p = 0.072** — not significant. Pooled
 accuracy across the two production-family seeds is 0.7206 → 0.7463 = **+2.58pp**, which lands
 almost exactly on the frozen benchmark's +2.56pp.
